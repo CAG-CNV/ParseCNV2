@@ -118,6 +118,7 @@ print LOG $myCommandLine;
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
 $cmd="which R";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: R not found!\n";}
 $cmd="which PerlModules/plink";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: plink not found!\n";}
+$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
 if(-e plink.sexcheck)
 {
 	$c="rm plink.sexcheck";$o=`$c`;
@@ -145,15 +146,22 @@ if($qc)
 	print "$o\n";
 	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' Cases.rawcnv_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out$input.rawcnv2";$o=`$c`;
 }
-$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$input.rawcnv2 | sort -u > temp/$out"."map";$o=`$c`;
+$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$input.rawcnv2 | sort -u -k1,1 -k2,2n -t_ > temp/$out"."map";$o=`$c`;
 %h_state=();
+%chr_posIndex=();
 open(MAP,"temp/$out"."map");
 while($line=<MAP>)
 {
 	chomp($line);
 	$h_state{$line}="-9";
+	$chr_posIndex{$line}=$lineNum;
 	#$h_id{$line}="";
+	@chr_pos=split("_",$line);
+	$diff[$lineNum]=$chr_pos[1]-$last_pos;
+	$last_pos=$chr_pos[1];
+	$lineNum++;
 }
+$diff[$lineNum]=1;#Exit at end
 
 $c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u > temp/$out"."AllIDs.txt";$o=`$c`;
 
@@ -221,12 +229,15 @@ while($chrStaStoStaId=<FILE>)
 	$state=$a[3];
 	$id=$a[4];
 	$confidence=$a[5];
+	$posIndex=$chr_posIndex{$chr."_".$start};
+	#print "$posIndex\n";
 	if($lastID eq $id || $cnvLineNum == 0)
 	{
 		#print "same id\n";
-		#TODO: Only increment to next observed base rather than every one	
-		for($i=$start;$i<=$stop;$i++)
+		#DONE: Only increment to next observed base rather than every one	
+		for($i=$start;$i<=$stop&$diff[$posIndex]>=0;$i+=$diff[$posIndex])
 		{
+			#print $chr."_".$i."\n";
 			if(exists($h_state{$chr."_".$i}))
 			{
 				$h_state{$chr."_".$i}=$state;
@@ -234,6 +245,11 @@ while($chrStaStoStaId=<FILE>)
 				$h_confidenceTotal{$chr."_".$i}+=$confidence;
 				#$h_countSamples{$chr."_".$i}++;
         			#$h_id{$chr."_".$i}.=$id;
+        			$posIndex++;
+			}
+			else
+			{
+				print "h_state \$chr._.\$i Does Not Exist!\n";
 			}
 		}
 	}
@@ -308,7 +324,7 @@ while($chrStaStoStaId=<FILE>)
                         $byte="";
                 }
 
-		for($i=$start;$i<=$stop;$i++)
+		for($i=$start;$i<=$stop&$diff[$posIndex]>=0;$i+=$diff[$posIndex])
                 {
                 	if(exists($h_state{$chr."_".$i}))
                         {

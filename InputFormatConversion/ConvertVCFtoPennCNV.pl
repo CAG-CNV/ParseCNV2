@@ -194,6 +194,16 @@ while (defined ($inputLine = <SAMPSHEET>))
 				#{$cn+=1;}
 				else
 				{print "NOTICE: Could not find $GTs[1] in alts!\n";}
+
+                                if($type=~"DEL"||$type=~"Del"||$type=~"del"||$GT[$iGT] eq '1')
+                                {
+                                        $cn=1;
+                                }
+                                else
+                                {
+                                        $cn=3;
+                                }
+
 				print $chr."\t".$start."\t".$end."\t".$cn."\t".$HeaderVals[$iSample]."\t".$GT[$iGQ]."\n";
 			}
 		}
