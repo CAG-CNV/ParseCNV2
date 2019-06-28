@@ -114,6 +114,10 @@ print "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on
 print LOG "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on ".$MonthPastStart{$timeData[4]}." ".$timeData[3]." ".$Year."\n";
 print $myCommandLine;
 print LOG $myCommandLine;
+if(!(-e PerlModules/plink))
+{
+	$c="unzip PerlModules/plink.zip -d PerlModules";$o=`$c`;
+}
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
 $cmd="which R";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: R not found!\n";}
