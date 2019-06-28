@@ -52,6 +52,11 @@ if (not $input)
 	print "ERROR: --i is a required input VCF or PennCNV rawcnv file or list of such files.\n";
 	exit;
 }
+$dir = 'temp';
+unless(-d $dir)
+{
+    mkdir $dir or die;
+}
 if($input =~ /.txt/)
 {
 	$c="rm temp/$out$input.rawcnv2";$o=`$c`;
