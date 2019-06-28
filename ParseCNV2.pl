@@ -122,6 +122,8 @@ print LOG $myCommandLine;
 if(!(-e PerlModules/plink))
 {
 	$c="unzip PerlModules/plink.zip -d PerlModules";$o=`$c`;
+	$c="unzip GeneRef/hg19_gc5Base_SimFormat_AllCol.sorted.zip -d GeneRef";$o=`$c`;
+	$c="unzip GeneRef/hg19_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d GeneRef";$o=`$c`;
 }
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
