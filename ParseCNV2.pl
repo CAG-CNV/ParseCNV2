@@ -341,6 +341,7 @@ while($chrStaStoStaId=<FILE>)
                         {
                                 $h_state{$chr."_".$i}=$state;
                         }
+			$posIndex++;
                 }
 	}
 	$lastID=$id;
