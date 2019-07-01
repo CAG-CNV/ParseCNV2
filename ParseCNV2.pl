@@ -119,7 +119,7 @@ print "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on
 print LOG "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on ".$MonthPastStart{$timeData[4]}." ".$timeData[3]." ".$Year."\n";
 print $myCommandLine;
 print LOG $myCommandLine;
-if(!(-e PerlModules/plink))
+if(!(-e "PerlModules/plink"))
 {
 	$c="unzip PerlModules/plink.zip -d PerlModules";$o=`$c`;
 	$c="unzip GeneRef/hg19_gc5Base_SimFormat_AllCol.sorted.zip -d GeneRef";$o=`$c`;
