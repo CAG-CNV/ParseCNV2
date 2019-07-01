@@ -58,17 +58,17 @@ while (defined ($line = <PEDFILE>))
 	{
 		if(exists($IndexAdmix{$Vals[$i]}))
 		{	
-			$Cohorts.=" ".$IndexAdmix{$Vals[$i]};
+			$Cohorts.=" ".$IndexAdmix{$Vals[$i]}." ";
 		}
 		else
 		{
-			$Cohorts.=" Missing";
+			$Cohorts.=" Missing ";
 		}
 	}
 	print RESULTFILE "$CNVRSamples[0]";
 	for($j=0;$j< $#CohortIDs+1;$j++)
 	{
-		$countCases = () = $Cohorts =~ /$CohortIDs[$j]/g;
+		$countCases = () = $Cohorts =~ / $CohortIDs[$j] /g;
 		print RESULTFILE "\t$countCases";
 	}
 		
