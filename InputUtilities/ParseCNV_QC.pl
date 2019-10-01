@@ -569,6 +569,7 @@ if($stratifyCN)
 	@CallFiles=split('\n',`$c`);
 	chomp(@CallFiles);
 	print("@CallFiles\n");
+	$CountCallFiles=$#CallFiles+1;
 }
 else
 {
