@@ -576,6 +576,7 @@ else
 	@CallFiles=`$c`;
 	chomp(@CallFiles);
 	print("@CallFiles\n");
+	$CountCallFiles=$#CallFiles+1;
 }
 open (R, ">$out.AllRes2.R");
 print R <<END;
@@ -584,16 +585,16 @@ library(extremevalues,lib.loc="./")
 
 write.table("ChipID Value Metric CallIndexRemove", file = paste("$out","QC_RemoveCalls.txt",sep="")  , append = FALSE,quote=FALSE,row.names=FALSE, col.names =FALSE)
 i=1
-print($#CallFiles)
-if($#CallFiles>1)
+print($CountCallFiles)
+if($CountCallFiles>1)
 {
 filename <- system(paste("ls $rawcnv","_remove_","$out","QC_RemoveIDs_JustNum.txt_*",sep=""),intern=TRUE)
-loopTimes=$#CallFiles+1
+loopTimes=$CountCallFiles+1
 }
-if($#CallFiles<=1)
+if($CountCallFiles<=1)
 {
 filename <- system(paste("ls $rawcnv","_remove_","$out","QC_RemoveIDs_JustNum.txt",sep=""),intern=TRUE)
-loopTimes=$#CallFiles
+loopTimes=$CountCallFiles
 }
 
 while(i<= loopTimes)
