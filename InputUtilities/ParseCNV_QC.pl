@@ -533,7 +533,7 @@ else {
 #unlink ("$out.AllRes.R","$out.AllRes.Rout", ".RData");
 
 
-$c="perl InputUtilities/FilterCNV.pl $out"."QC_RemoveIDs.txt $rawcnv 5 remove";
+$c="perl FilterCNV.pl $out"."QC_RemoveIDs.txt $rawcnv 5 remove";
 `$c`;
 $c="sed 's/[^\ ]*=//g' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | sed 's/,//g' > a; awk '{print \$0\"\\t\"NR}' a > $rawcnv"."_remove_".$out."QC_RemoveIDs_JustNum.txt";
 `$c`;
@@ -549,9 +549,9 @@ $c="cat $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | awk '{print \$1,\$2,\$3,\$4
 `$c`;
 $c="awk '{print \$1,\$2,\$3,\$4,\"./\"\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14}' $log > $log"."_wPath";
 `$c`;
-$c="perl PerlModules/filter_cnv.pl $rawcnv"."_wPath -qclogfile $log"."_wPath -qcsumout QCsum.qcsum -out goodCNV.good.cnv -chroms 1-22";
+$c="perl ../PerlModules/filter_cnv.pl $rawcnv"."_wPath -qclogfile $log"."_wPath -qcsumout QCsum.qcsum -out goodCNV.good.cnv -chroms 1-22";
 `$c`;
-$c="Rscript R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ./R";
+$c="Rscript R/Dependencies.R; Rscript R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ./R";
 `$c`;
 $c="Rscript R/R_script_calculate_quality_score.R ./R";
 `$c`;
@@ -559,7 +559,7 @@ $c="awk '{print \$1\"_chr\"\$2\":\"\$3\"-\"\$4\"\t\"\$NF}' log_CNV_summary_dataf
 `$c`;
 $c="awk '{print \$5\"_\"\$1\"\t\"\$0}' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt > a";
 `$c`;
-$c="perl PerlModules/Vlookup.pl atob a | sed 's/[^\\t]*\\t//' | awk '{print \$0\"\\t\"NR}' > $rawcnv"."_remove_".$out."QC_RemoveIDs.txt"."_wMaceQualityScore";
+$c="perl ../PerlModules/Vlookup.pl atob a | sed 's/[^\\t]*\\t//' | awk '{print \$0\"\\t\"NR}' > $rawcnv"."_remove_".$out."QC_RemoveIDs.txt"."_wMaceQualityScore";
 `$c`;
 
 if($stratifyCN)
@@ -735,9 +735,9 @@ AllQC2<-read.table(paste("$out","QC_RemoveCalls.txt",sep="") ,header=FALSE,comme
 mtext(paste(length(table(AllQC2\$V4)),"unique calls fail any QC"), 1, padj=2.4)###put text below
 i=i+1
 
-}
+
 END
-print R "while (!is.null(dev.list()))  dev.off()\n";
+print R "while (!is.null(dev.list()))  dev.off()\n}\n";
 close (R);
 system ("R CMD BATCH $out.AllRes2.R");
 ###Reopen STDOUT screen output for final results
@@ -752,7 +752,7 @@ else {
   $c="tail $out.AllRes2.Rout";print"=======The R Error log last 10 lines=======\n";$output=`$c`;print"$output\n";
 }
 $c="awk '{print \$4}' $out"."QC_RemoveCalls.txt > $out"."QC_RemoveCalls.txt_Indexes";`$c`;
-$c="perl InputUtilities/FilterCNV.pl $out"."QC_RemoveCalls.txt_Indexes $rawcnv"."_remove_"."$out"."QC_RemoveIDs.txt_wMaceQualityScore"." 10 remove";`$c`;
+$c="perl FilterCNV.pl $out"."QC_RemoveCalls.txt_Indexes $rawcnv"."_remove_"."$out"."QC_RemoveIDs.txt_wMaceQualityScore"." 10 remove";`$c`;
 $c="awk '{print \$4}' $out"."QC_RemoveCalls.txt | sed '1d' | sort -u | wc -l";
 $CountCallsQCRemoved=`$c`;
 chomp($CountCallsQCRemoved);
