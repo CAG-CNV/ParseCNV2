@@ -129,7 +129,8 @@ if(!(-e "PerlModules/plink"))
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
 $cmd="which R";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: R not found!\n";}
 $cmd="which PerlModules/plink";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: plink not found!\n";}
-$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
+#$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
+$c="free -m | awk '{if(NR==2)printf\$4}'";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
 if(-e plink.sexcheck)
 {
 	$c="rm plink.sexcheck";$o=`$c`;
@@ -204,6 +205,23 @@ else
 		$c="wc -l temp/$out"."fam | awk '{ORS=\"\";print \$1}'";$samplesWTrait=`$c`;
 		print "$samples samples, $traits traits, and $samplesWTrait samples with trait\n";
 	}
+	
+	if($tdt ne "")
+	{
+		if($bfile ne "")
+		{
+			$c="join temp/$out"."uniq_ids $bfile".".fam -1 1 -2 2 -o2.1,2.2,2.3,2.4,2.5,2.6 | sort -k2,2 > temp/$out"."fam";$o=`$c`;
+			$c="wc -l < temp/$out"."uniq_ids";$o1=`$c`;chomp($o1);
+			$c="wc -l < $bfile".".fam";$o2=`$c`;chomp($o2);
+                	if($o2 > $o1)
+                	{print "WARNING: ".($o2-$o1)." fam specified cases are not present in the CNV file.\n";}
+		}
+		else
+		{
+			print "ERROR: bfile must be specified with tdt option to provide family relationships\n";
+			exit;
+		}
+	}
 }
 #$, = "|";
 open(my $BEDDEL, '>:raw', 'temp/'.$out.'plinkDel.bed') or die "Unable to open: $!";
@@ -241,14 +259,16 @@ while($chrStaStoStaId=<FILE>)
 	$id=$a[4];
 	$confidence=$a[5];
 	$posIndex=$chr_posIndex{$chr."_".$start};
+	#print $id."\n";
 	#print "$posIndex\n";
 	if($lastID eq $id || $cnvLineNum == 0)
 	{
 		#print "same id\n";
 		#DONE: Only increment to next observed base rather than every one	
-		for($i=$start;$i<=$stop&$diff[$posIndex]>=0;$i+=$diff[$posIndex])
+		#if($id eq "1749718487_A.int.csv"){print $diff[$posIndex]."_".$chr."_".$i."\n";}
+		for($i=$start;$i<=$stop&$diff[$posIndex]>=0|$i==$start;$i+=$diff[$posIndex])
 		{
-			#print $chr."_".$i."\n";
+			#if($id eq "1749718487_A.int.csv"){print $chr."_".$i."\n";}
 			if(exists($h_state{$chr."_".$i}))
 			{
 				$h_state{$chr."_".$i}=$state;
@@ -335,12 +355,17 @@ while($chrStaStoStaId=<FILE>)
                         $byte="";
                 }
 
-		for($i=$start;$i<=$stop&$diff[$posIndex]>=0;$i+=$diff[$posIndex])
+		#if($id eq "1749718487_A.int.csv"){print $diff[$posIndex]."_".$chr."_".$i."\n";}
+		for($i=$start;$i<=$stop&$diff[$posIndex]>=0|$i==$start;$i+=$diff[$posIndex])
                 {
+			#print $chr."_".$i."\n";
+			#if($id eq "1749718487_A.int.csv"){print $chr."_".$i."\n";}
                 	if(exists($h_state{$chr."_".$i}))
                         {
                                 $h_state{$chr."_".$i}=$state;
-                        }
+                        	$h_lengthTotal{$chr."_".$i}+=$stop-$start+1;
+                                $h_confidenceTotal{$chr."_".$i}+=$confidence;
+			}
 			$posIndex++;
                 }
 	}
@@ -432,13 +457,36 @@ while (($key, $value) = each(%h_state))
 		close($BEDDEL);
 		close($BEDDUP);
 		close($BEDDELDUP);
-		$c="PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;
+		$c="PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;#print"$c\n";print"$o\n";
 		$c="PerlModules/./plink --bed temp/$out"."plinkDup.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."dup";$o=`$c`;
 		$c="PerlModules/./plink --bed temp/$out"."plinkDelDup.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 		$c="PerlModules/./plink --bfile temp/$out"."del --assoc fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
 		$c="PerlModules/./plink --bfile temp/$out"."dup --assoc fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
 		$c="PerlModules/./plink --bfile temp/$out"."deldup --assoc fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 
+		#Get matching p-values to original ParseCNV with OR from assoc fisher
+		$c="PerlModules/./plink --bfile temp/$out"."del --model fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
+                $c="PerlModules/./plink --bfile temp/$out"."dup --model fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
+                $c="PerlModules/./plink --bfile temp/$out"."deldup --model fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+		
+		$c="awk '{print \$2\"\\t\"\$0}' temp/$out"."del.assoc.fisher | sort -k1,1 > temp/$out"."del.assoc.fisher.forJoin";$o=`$c`;
+		$c="awk '{if(\$5==\"GENO\")print \$2\"\\t\"\$NF\"\\t\"\$(NF-2)\"\\t\"\$(NF-1)}' temp/$out"."del.model | sort -k1,1 > temp/$out"."del.model.forJoin";$o=`$c`;
+		$c="echo SNP CHR SNP BP A1 F_A F_U A2 P_ASSOC OR P AFF UNAFF > temp/$out"."del.assoc.fisher.model";$o=`$c`;
+		$c="join temp/$out"."del.assoc.fisher.forJoin temp/$out"."del.model.forJoin | sort -k2,2 -k4,4n >> temp/$out"."del.assoc.fisher.model";$o=`$c`;
+		$c="awk '{print \$2\"\\t\"\$0}' temp/$out"."dup.assoc.fisher | sort -k1,1 > temp/$out"."dup.assoc.fisher.forJoin";$o=`$c`;
+                $c="awk '{if(\$5==\"GENO\")print \$2\"\\t\"\$NF\"\\t\"\$(NF-2)\"\\t\"\$(NF-1)}' temp/$out"."dup.model | sort -k1,1 > temp/$out"."dup.model.forJoin";$o=`$c`;
+                $c="echo SNP CHR SNP BP A1 F_A F_U A2 P_ASSOC OR P AFF UNAFF > temp/$out"."dup.assoc.fisher.model";$o=`$c`;
+                $c="join temp/$out"."dup.assoc.fisher.forJoin temp/$out"."dup.model.forJoin | sort -k2,2 -k4,4n >> temp/$out"."dup.assoc.fisher.model";$o=`$c`;
+		$c="awk '{print \$2\"\\t\"\$0}' temp/$out"."deldup.assoc.fisher | sort -k1,1 > temp/$out"."deldup.assoc.fisher.forJoin";$o=`$c`;
+                $c="awk '{if(\$5==\"GENO\")print \$2\"\\t\"\$NF\"\\t\"\$(NF-2)\"\\t\"\$(NF-1)}' temp/$out"."deldup.model | sort -k1,1 > temp/$out"."deldup.model.forJoin";$o=`$c`;
+                $c="echo SNP CHR SNP BP A1 F_A F_U A2 P_ASSOC OR P AFF UNAFF > temp/$out"."deldup.assoc.fisher.model";$o=`$c`;
+                $c="join temp/$out"."deldup.assoc.fisher.forJoin temp/$out"."deldup.model.forJoin | sort -k2,2 -k4,4n >> temp/$out"."deldup.assoc.fisher.model";$o=`$c`;
+		if($tdt ne "")
+        	{
+			$c="PerlModules/./plink --bfile temp/$out"."del --tdt --allow-no-sex --out temp/$out"."del";$o=`$c`;
+                	$c="PerlModules/./plink --bfile temp/$out"."dup --tdt --allow-no-sex --out temp/$out"."dup";$o=`$c`;
+                	$c="PerlModules/./plink --bfile temp/$out"."deldup --tdt --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+		}	
 		#$c="perl OutputUtilities/InsertPlinkPvalues.pl";$o=`$c`;
 print("\rProgress:100\%\n");
 if (not $mergePVar)
@@ -482,13 +530,18 @@ if (not $lowHighRisk)
 }
 if($cases ne "")
 {
-	open(DEL,"temp/$out"."del.assoc.fisher");
-	open(DUP,"temp/$out"."dup.assoc.fisher");
+	open(DEL,"temp/$out"."del.assoc.fisher.model");
+	open(DUP,"temp/$out"."dup.assoc.fisher.model");
 }
 elsif($quantitativeTrait ne "")
 {
 	open(DEL,"temp/$out"."del.qassoc");
         open(DUP,"temp/$out"."dup.qassoc");
+}
+if($tdt ne "")
+{
+	open(DEL,"temp/$out"."del.tdt");
+	open(DUP,"temp/$out"."dup.tdt");
 }
 $line=<DEL>;
 @Vals=split(/\s+/,$line);
@@ -517,7 +570,7 @@ $mySNPColNum=$i;
 $i=0;
 $myBetaTColNum=0;
 $myORColNum=0;
-while($Vals[$i] ne 'BETA' && $Vals[$i] ne 'T' && $Vals[$i] ne 'OR' && ($i <= $#Vals) )
+while($Vals[$i] ne 'BETA' && ($Vals[$i] ne 'T' || $tdt ne "") && $Vals[$i] ne 'OR' && ($i <= $#Vals) )
 {
         $i++;
 }
@@ -528,11 +581,11 @@ if ($Vals[$i] ne 'BETA' && $Vals[$i] ne 'T' && $Vals[$i] ne 'OR' )
 }
 if($Vals[$i] eq 'BETA' || $Vals[$i] eq 'T')
 {
-        $myBetaTColNum=$i;
+        $myBetaTColNum=$i;#print"BETA or T matches\n";
 }
 if($Vals[$i] eq 'OR')
 {
-        $myORColNum=$i;
+        $myORColNum=$i;#print"OR matches\n";
 }
 $myCaseEnrichStat=$Vals[$i];
 $i=0;
@@ -622,7 +675,8 @@ while($snpStat=<DEL>)
 				#print "NA is now 1\n";
 				$stat[$myPColNum]=1;
 			}
-			if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist) && -(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))
+			#print -(log($stat[$myPColNum])/(log(10)))."\n";
+			if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
 			{
 				#print "Extend CNVR\n";
 			}
@@ -684,7 +738,7 @@ while($snpStat=<DEL>)
                                 $stat[$myPColNum]=1;
                         }
 
-                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && -(log($stat[$myPColNum])/(log(10))) < ($lastNegLogPCon + $mergePVar))
+                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
                         {
                                 #print "Extend CNVR\n";
                         }
@@ -773,7 +827,7 @@ while($snpStat=<DUP>)
                                 $stat[$myPColNum]=1;
                         }
 
-                        if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist) && -(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))
+                        if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
                         {
                                 #print "Extend CNVR\n";
 			}
@@ -837,7 +891,7 @@ while($snpStat=<DUP>)
                                 $stat[$myPColNum]=1;
                         }
 
-                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && -(log($stat[$myPColNum])/(log(10))) < ($lastNegLogPCon + $mergePVar))
+                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
                         {
                                 #print "Extend CNVR\n";
                         }
@@ -898,7 +952,10 @@ $command = "perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/$out"
 $command = "perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/$out"."ChrPosRanges ".$MyDirectoryPathPrefix."GeneRef/".$build."_dgv_SimFormat_AllCol.sorted -knowngene -expandmax 5m | sed 's/^NOT_FOUND\\t0\\t[^\\t]*/NA\tNA/' | sed 's/^chr[^\\t]*\\t//' | awk -F\"\\t\" '{if(\$2>0){print\$1\"-closest\"}else{print\$1}}' > temp/".$out."CNVR_ALL_CDupDgv_Col23.txt";$o=`$command`;
 $defFile= $MyDirectoryPathPrefix."GeneRef/".$build."_cytoBand.txt";
 #Do once before as part of GeneRef setup #$c="join <(awk '{if(\$2==0)print}' GeneRef/hg19_cytoBand.txt | sort -k1,1) <(grep acen GeneRef/hg19_cytoBand.txt | sort -u -k1,1 | sort -k1,1) | join - <(grep acen GeneRef/hg19_cytoBand.txt | sort -k3,3nr | sort -u -k1,1 | sort -k1,1) | join - <(sort -k3,3nr GeneRef/hg19_cytoBand.txt | sort -u -k1,1 | sort -k1,1) | awk '{print \$1\"\\t\"\$2\"\\t\"\$3\"\\ttelomere\\n\"\$1\"\\t\"\$6\"\\t\"\$7\"\\tcentromere\\n\"\$1\"\\t\"\$10\"\\t\"\$11\"\\tcentromere\\n\"\$1\"\\t\"\$14\"\\t\"\$15\"\\ttelomere\"}' | sed 's/^chr//' > ".$MyDirectoryPathPrefix."GeneRef/".$build."_cytoBand_TeloCentro.bed";$o=`$c`;
-$c="chmod +x ".$MyDirectoryPathPrefix."PerlModules/bedtools; ".$MyDirectoryPathPrefix."PerlModules/bedtools intersect -a temp/$out"."Report2.txt -b ".$MyDirectoryPathPrefix."GeneRef/".$build."_cytoBand_TeloCentro.bed -wo | awk '{print \$(NF-1)}' > temp/".$out."CNVR_TeloCentro.txt";$o=`$c`;
+$c="chmod +x ".$MyDirectoryPathPrefix."PerlModules/bedtools; ".$MyDirectoryPathPrefix."PerlModules/bedtools intersect -a temp/$out"."Report2.txt -b ".$MyDirectoryPathPrefix."GeneRef/".$build."_cytoBand_TeloCentro.bed -wo | awk '{print \$1\":\"\$2\"-\"\$3\"\\t\"\$(NF-1)}' > temp/".$out."CNVR_TeloCentro.txt";$o=`$c`;
+$c="awk '{print \$1\":\"\$2\"-\"\$3}' temp/$out"."Report2.txt > a;perl $MyDirectoryPathPrefix"."PerlModules/Vlookup.pl temp/".$out."CNVR_TeloCentro.txt a > b; mv b temp/".$out."CNVR_TeloCentro.txt";$o=`$c`;
+
+
 $command = "perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/$out"."ChrPosRanges ".$MyDirectoryPathPrefix."GeneRef/".$build."_gc5Base_SimFormat_AllCol.sorted -knowngene -expandmax 5m | sed 's/^NOT_FOUND\\t0\\t[^\\t]*/NA\tNA/' | sed 's/^chr[^\\t]*\\t//' | awk '{if(\$2>0){print\$1\"-closest\"}else{print\$1}}' > temp/".$out."CNVR_ALL_CDupDgvTcGc_Col23.txt";$o=`$command`;
 $c="wc -l temp/$out"."fam | awk '{print \$1}'";$totalSamples=`$c`;
 $c="awk -F\"\\t\" '{print (\$(NF-3)+\$(NF-2))/$totalSamples}' temp/$out"."Report2.txt > temp/".$out."CNVR_PopFreq.txt";$o=`$c`;
@@ -1070,8 +1127,8 @@ else
 	$c="cat header temp/$out"."Report6.txt > $out"."Report_Verbose.txt";$o=`$c`;
 }
 
-print"Output written to Report.txt\n";
-print LOG "Output written to Report.txt\n";
+print"Output written to $out"."Report.txt\n";
+print LOG "Output written to $out"."Report.txt\n";
 
 open(ALLIDS,"temp/$out"."AllIDs.txt");
 open(VCF,">$out"."Report_Verbose.vcf");
