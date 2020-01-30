@@ -639,7 +639,7 @@ while($snpStat=<DEL>)
         #}
 	if($stat[$myPColNum]<=$maxPInclusion)
 	{
-		if((($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T') && $stat[$myBetaTColNum] > 0) || ($myCaseEnrichStat eq 'OR' && $stat[$myORColNum] > 1))
+		if((($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T') && $stat[$myBetaTColNum] > 0) || ($myCaseEnrichStat eq 'OR' && ($stat[$myORColNum] > 1 || $stat[$myORColNum] eq 'NA')))
 		{
 			$caseEnrichDelSnps++;
 			if($caseEnrichDelSnps==1)
@@ -790,7 +790,7 @@ while($snpStat=<DUP>)
         #}
         if($stat[$myPColNum]<=$maxPInclusion)
         {
-                if((($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T') && $stat[$myBetaTColNum] > 0) || ($myCaseEnrichStat eq 'OR' && $stat[$myORColNum] > 1))
+                if((($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T') && $stat[$myBetaTColNum] > 0) || ($myCaseEnrichStat eq 'OR' && ($stat[$myORColNum] > 1 || $stat[$myORColNum] eq 'NA')))
                 {
                         $caseEnrichDupSnps++;
                         if($caseEnrichDupSnps==1)
