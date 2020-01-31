@@ -621,6 +621,8 @@ if ($Vals[$i] ne 'SNP')
         exit;
 }
 $mySnpColNum=$i;
+$JustPosIndex_caseEnrichDel=0;
+$JustPosIndex_controlEnrichDel=0;
 #$c="rm CNVR_caseEnrichDel.txt CNVR_controlEnrichDel.txt CNVR_caseEnrichDup.txt CNVR_controlEnrichDup.txt";$o=`$c`;print"$o\n";
 open(CNVR_caseEnrichDel,">temp/$out"."caseEnrichDel.txt");
 open(CNVR_controlEnrichDel,">temp/$out"."controlEnrichDel.txt");
@@ -685,8 +687,15 @@ while($snpStat=<DEL>)
 				if($caseEnrichDelSnps>1)
 				{
 					#print "End CNVR\n";
+					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
+                                        {
+                                        }
+                                        else
+                                        {
+                                                $JustPosIndex_caseEnrichDel++;
+                                        }
 					$CNVREnd=$lastPos;
-					print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $lastCNVRP $lastCNVR_BTO $lastTagSnp $CNVRMaxP\n"; #Cases Controls Gene SIDs RFs
+					print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $lastCNVRP $lastCNVR_BTO $lastTagSnp $CNVRMaxP $JustPosIndex_caseEnrichDel\n"; #Cases Controls Gene SIDs RFs
 					$CNVRStart=$stat[$myBpColNum];
 					$CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
@@ -747,8 +756,15 @@ while($snpStat=<DEL>)
                                 if($controlEnrichDelSnps>1)
                                 {
                                         #print "End CNVR\n";
+					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
+                                        {
+                                        }
+                                        else
+                                        {
+                                                $JustPosIndex_controlEnrichDel++;
+                                        }
                                         $CNVREndCon=$lastPosCon;
-                                        print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $lastCNVRPCon $lastCNVR_BTOCon $lastTagSnpCon $CNVRMaxPCon\n"; #Cases Controls Gene SIDs RFs
+                                        print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $lastCNVRPCon $lastCNVR_BTOCon $lastTagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDel\n"; #Cases Controls Gene SIDs RFs
                                         $CNVRStartCon=$stat[$myBpColNum];
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
@@ -767,11 +783,13 @@ while($snpStat=<DEL>)
 }
 #Exit Condition
 $CNVREnd=$lastPos;
-print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP\n";#$CasesControls\n"; #Cases Controls Gene SIDs RFs
+print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDel\n";#$CasesControls\n"; #Cases Controls Gene SIDs RFs
 $CNVREndCon=$lastPosCon;
-print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon\n"; #Cases Controls Gene SIDs RFs
+print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDel\n"; #Cases Controls Gene SIDs RFs
 
 #DUPLICATIONS
+$JustPosIndex_caseEnrichDup=0;
+$JustPosIndex_controlEnrichDup=0;
 open(CNVR_caseEnrichDup,">temp/$out"."caseEnrichDup.txt");
 open(CNVR_controlEnrichDup,">temp/$out"."controlEnrichDup.txt");
 $snpStat=<DUP>; #Discard Header (assume del and dup assoc have same header)
@@ -836,8 +854,15 @@ while($snpStat=<DUP>)
                                 if($caseEnrichDupSnps>1)
                                 {
                                         #print "End CNVR\n";
+					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
+                                        {
+                                        }
+                                        else
+                                        {
+                                                $JustPosIndex_caseEnrichDup++;
+                                        }
                                         $CNVREnd=$lastPos;
-                                        print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $lastCNVRP $lastCNVR_BTO $lastTagSnp $lastCNVRMaxP\n"; #Cases Controls Gene SIDs RFs
+                                        print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $lastCNVRP $lastCNVR_BTO $lastTagSnp $lastCNVRMaxP $JustPosIndex_caseEnrichDup\n"; #Cases Controls Gene SIDs RFs
                                         $CNVRStart=$stat[$myBpColNum];
                                         $CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
@@ -900,8 +925,15 @@ while($snpStat=<DUP>)
                                 if($controlEnrichDupSnps>1)
                                 {
 					#print "End CNVR\n";
+					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
+                                        {
+                                        }
+                                        else
+                                        {
+                                                $JustPosIndex_controlEnrichDup++;
+                                        }
                                         $CNVREndCon=$lastPosCon;
-                                        print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $lastCNVRPCon $lastCNVR_BTOCon $lastTagSnpCon $lastCNVRMaxPCon\n"; #Cases Controls Gene SIDs RFs
+                                        print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $lastCNVRPCon $lastCNVR_BTOCon $lastTagSnpCon $lastCNVRMaxPCon $JustPosIndex_controlEnrichDup\n"; #Cases Controls Gene SIDs RFs
                                         $CNVRStartCon=$stat[$myBpColNum];
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
@@ -922,11 +954,11 @@ while($snpStat=<DUP>)
 }
 #Exit Condition
 $CNVREnd=$lastPos;
-print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP\n"; #Cases Controls Gene SIDs RFs
+print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDup\n"; #Cases Controls Gene SIDs RFs
 $CNVREndCon=$lastPosCon;
-print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon\n"; #Cases Controls Gene SIDs RFs
+print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDup\n"; #Cases Controls Gene SIDs RFs
 
-$c="grep . temp/$out"."caseEnrichDel.txt temp/$out"."controlEnrichDel.txt temp/$out"."caseEnrichDup.txt temp/$out"."controlEnrichDup.txt | sed '/:[\\ ]*\$/d' | sed 's/temp\\///' | sed 's/$out//' | sed 's/D/\td/' | sed 's/:/\t/' | sed 's/.txt//' | sed 's/Enrich//' | awk '{print \$3,\$4,\$5,\$6,\$7,\$8,\$9,\$1,\$2}' | sed 's/\ /\t/g' > temp/$out"."Report.txt";$o=`$c`;
+$c="grep . temp/$out"."caseEnrichDel.txt temp/$out"."controlEnrichDel.txt temp/$out"."caseEnrichDup.txt temp/$out"."controlEnrichDup.txt | sed '/:[\\ ]*\$/d' | sed 's/temp\\///' | sed 's/$out//' | sed 's/D/\td/' | sed 's/:/\t/' | sed 's/.txt//' | sed 's/Enrich//' | sort -k6,6g | awk '!_[\$1\$2\$10]++' | awk '{print \$3,\$4,\$5,\$6,\$7,\$8,\$9,\$1,\$2}' | sed 's/\ /\t/g' > temp/$out"."Report.txt";$o=`$c`;
 
 open(REPORT,"temp/$out"."Report.txt");
 open(REPORT2,">temp/$out"."Report2.txt");
