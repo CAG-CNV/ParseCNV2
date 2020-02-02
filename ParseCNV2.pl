@@ -1023,7 +1023,7 @@ open(REPORT,"temp/$out"."Report5.txt");
 open(REPORT2,">temp/$out"."Report6.txt");
 open(SNP_IDS,">temp/$out"."Snp_IDs.txt");
 open(REPORT_BRIEF,">$out"."Report.txt");
-printf REPORT_BRIEF ("%3s %11s %10s %10s %6s %8s %8s %6s\n","chr","start($build)","stop","p",$myCaseEnrichStat,"cases","controls","filter");
+printf REPORT_BRIEF ("%3s %11s %10s %10s %6s %8s %8s %6s %5s %5s\n","chr","start($build)","stop","p",$myCaseEnrichStat,"cases","controls","filter","type","tag");
 $DgvEntries=0;
 $SegDupsEntries=0;
 while($line=<REPORT>)
@@ -1110,7 +1110,7 @@ while($line=<REPORT>)
 	
 	print REPORT2 "$line\t$AvgLength\t$DgvEntries\t$a[6]\t$a[19]\t$SegDupsEntries\t$recurrent\t$InflatedSamplesFreq\t$AvgConfidence\t$RF\t$RF_PassFail\n";
 	
-	printf REPORT_BRIEF ("%3d %11d %10d %10s %6s %8d %8d %6s\n",$a[0],$a[1],$a[2],$a[3],$a[4],$a[9],$a[10],$RF_PassFail);
+	printf REPORT_BRIEF ("%3d %11d %10d %10s %6s %8d %8d %6s %5s %5s\n",$a[0],$a[1],$a[2],$a[3],$a[4],$a[9],$a[10],$RF_PassFail,$a[8],$a[5]);
 	
 	$InflatedSamplesCount=0;
 	$countLines++;
@@ -1131,6 +1131,9 @@ while($line=<REPORT>)
 	$RF=0;
 }
 #$countLines--;
+$c="sort -k1,1 -k2,2n temp/$out$input.rawcnv2 | sed 's/\\t\$//' > temp/$out$input.rawcnv2Sorted";$o=`$c`;
+$c="awk '{print \$10\"\\t\"\$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9}' $out"."Report.txt | sed 's/_/\\t/' | awk '{print \$1\"\\t\"\$2\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10\"\\t\"\$11}' | sort -k1,1 -k2,2n | grep -v tag > $out"."Report.txtSorted";$o=`$c`;
+$c=$MyDirectoryPathPrefix."PerlModules/bedtools intersect -a temp/$out$input.rawcnv2Sorted -b $out"."Report.txtSorted -sorted -wo | awk '{if((\$4<2&&\$(NF-1)==\"del\")||(\$4>=2&&\$(NF-1)==\"dup\"))print}' > $out"."Report_ContributingCalls.txt";$o=`$c`;
 if($countLines>0)
 {
 	$FailRate=$overallFail/$countLines;
