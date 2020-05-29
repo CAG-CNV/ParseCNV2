@@ -687,7 +687,7 @@ while($snpStat=<DEL>)
 				if($caseEnrichDelSnps>1)
 				{
 					#print "End CNVR\n";
-					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
+					if($lastChrSigCaseEnrich eq $lastChr && $lastPos < ($lastPosSigCaseEnrich + $mergeDist))
                                         {
                                         }
                                         else
@@ -758,7 +758,7 @@ while($snpStat=<DEL>)
                                 if($controlEnrichDelSnps>1)
                                 {
                                         #print "End CNVR\n";
-					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
+					if($lastChrSigControlEnrich eq $lastChrCon && $lastPosCon < ($lastPosSigControlEnrich + $mergeDist))
                                         {
                                         }
                                         else
@@ -884,7 +884,7 @@ while($snpStat=<DUP>)
                                 if($caseEnrichDupSnps>1)
                                 {
                                         #print "End CNVR\n";
-					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
+					if($lastChrSigCaseEnrich eq $lastChr && $lastPos < ($lastPosSigCaseEnrich + $mergeDist))
                                         {
                                         }
                                         else
@@ -957,7 +957,7 @@ while($snpStat=<DUP>)
                                 if($controlEnrichDupSnps>1)
                                 {
 					#print "End CNVR\n";
-					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
+					if($lastChrSigControlEnrich eq $lastChrCon && $lastPosCon < ($lastPosSigControlEnrich + $mergeDist))
                                         {
                                         }
                                         else
