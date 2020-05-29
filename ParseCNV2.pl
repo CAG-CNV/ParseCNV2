@@ -749,7 +749,7 @@ while($snpStat=<DEL>)
                                 $stat[$myPColNum]=1;
                         }
 
-                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
+                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogPCon + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogPCon - $mergePVar)))
                         {
                                 #print "Extend CNVR\n";
                         }
@@ -948,7 +948,7 @@ while($snpStat=<DUP>)
                                 $stat[$myPColNum]=1;
                         }
 
-                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogP + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogP - $mergePVar)))
+                        if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist) && (-(log($stat[$myPColNum])/(log(10))) < ($lastNegLogPCon + $mergePVar))&&(-(log($stat[$myPColNum])/(log(10))) > ($lastNegLogPCon - $mergePVar)))
                         {
                                 #print "Extend CNVR\n";
                         }
