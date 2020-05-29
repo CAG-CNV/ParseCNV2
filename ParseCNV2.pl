@@ -687,7 +687,7 @@ while($snpStat=<DEL>)
 				if($caseEnrichDelSnps>1)
 				{
 					#print "End CNVR\n";
-					if($lastChrSigCaseEnrich eq $lastChr && $lastPos < ($lastPosSigCaseEnrich + $mergeDist))
+					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
                                         {
                                         }
                                         else
@@ -700,8 +700,8 @@ while($snpStat=<DEL>)
 					$CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
-					$lastChrSigCaseEnrich=$lastChr;
-					$lastPosSigCaseEnrich=$CNVREnd;
+					#$lastChrSigCaseEnrich=$lastChr;
+					#$lastPosSigCaseEnrich=$CNVREnd;
 				}
 			}
 			$lastChr=$stat[$myChrColNum];
@@ -758,7 +758,7 @@ while($snpStat=<DEL>)
                                 if($controlEnrichDelSnps>1)
                                 {
                                         #print "End CNVR\n";
-					if($lastChrSigControlEnrich eq $lastChrCon && $lastPosCon < ($lastPosSigControlEnrich + $mergeDist))
+					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
                                         {
                                         }
                                         else
@@ -771,8 +771,8 @@ while($snpStat=<DEL>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
-					$lastChrSigControlEnrich=$lastChrCon;
-					$lastPosSigControlEnrich=$CNVREndCon;
+					#$lastChrSigControlEnrich=$lastChrCon;
+					#$lastPosSigControlEnrich=$CNVREndCon;
                                 }
                         }
                         $lastChrCon=$stat[$myChrColNum];
@@ -786,7 +786,7 @@ while($snpStat=<DEL>)
 
 }
 #Exit Condition
-if($lastChrSigCaseEnrich eq $lastChr && $lastPosSigCaseEnrich < ($lastPos + $mergeDist)) ## $stat[$myChrColNum] eq $lastChr &&
+if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist)) ## $stat[$myChrColNum] eq $lastChr &&
 {
 }
 else
@@ -801,7 +801,7 @@ else
 {
 	print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDel\n";#$CasesControls\n"; #Cases Controls Gene SIDs RFs
 }
-if($lastChrSigControlEnrich eq $lastChrCon && $lastPosSigControlEnrich < ($lastPosCon + $mergeDist))
+if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
 {
 }
 else
@@ -884,7 +884,7 @@ while($snpStat=<DUP>)
                                 if($caseEnrichDupSnps>1)
                                 {
                                         #print "End CNVR\n";
-					if($lastChrSigCaseEnrich eq $lastChr && $lastPos < ($lastPosSigCaseEnrich + $mergeDist))
+					if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
                                         {
                                         }
                                         else
@@ -897,8 +897,8 @@ while($snpStat=<DUP>)
                                         $CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
-					$lastChrSigCaseEnrich=$lastChr;
-					$lastPosSigCaseEnrich=$CNVREnd;
+					#$lastChrSigCaseEnrich=$lastChr;
+					#$lastPosSigCaseEnrich=$CNVREnd;
                                 }
                         }
                         $lastChr=$stat[$myChrColNum];
@@ -957,7 +957,7 @@ while($snpStat=<DUP>)
                                 if($controlEnrichDupSnps>1)
                                 {
 					#print "End CNVR\n";
-					if($lastChrSigControlEnrich eq $lastChrCon && $lastPosCon < ($lastPosSigControlEnrich + $mergeDist))
+					if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
                                         {
                                         }
                                         else
@@ -970,8 +970,8 @@ while($snpStat=<DUP>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
-					$lastChrSigControlEnrich=$lastChrCon;
-					$lastPosSigControlEnrich=$CNVREndCon;
+					#$lastChrSigControlEnrich=$lastChrCon;
+					#$lastPosSigControlEnrich=$CNVREndCon;
                                 }
                         }
                         $lastChrCon=$stat[$myChrColNum];
@@ -987,7 +987,7 @@ while($snpStat=<DUP>)
 
 }
 #Exit Condition
-if($lastChrSigCaseEnrich eq $lastChr && $lastPosSigCaseEnrich < ($lastPos + $mergeDist))
+if($stat[$myChrColNum] eq $lastChr && $stat[$myBpColNum] < ($lastPos + $mergeDist))
 {
 }
 else
@@ -1002,7 +1002,7 @@ else
 {
 	print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDup\n"; #Cases Controls Gene SIDs RFs
 }
-if($lastChrSigControlEnrich eq $lastChrCon && $lastPosSigControlEnrich < ($lastPosCon + $mergeDist))
+if($stat[$myChrColNum] eq $lastChrCon && $stat[$myBpColNum] < ($lastPosCon + $mergeDist))
 {
 }
 else
