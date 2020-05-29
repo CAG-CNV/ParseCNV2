@@ -700,6 +700,8 @@ while($snpStat=<DEL>)
 					$CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
+					$lastChrSigCaseEnrich=$lastChr;
+					$lastPosSigCaseEnrich=$CNVREnd;
 				}
 			}
 			$lastChr=$stat[$myChrColNum];
@@ -769,6 +771,8 @@ while($snpStat=<DEL>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
+					$lastChrSigControlEnrich=$lastChrCon;
+					$lastPosSigControlEnrich=$CNVREndCon;
                                 }
                         }
                         $lastChrCon=$stat[$myChrColNum];
@@ -782,10 +786,36 @@ while($snpStat=<DEL>)
 
 }
 #Exit Condition
+if($lastChrSigCaseEnrich eq $lastChr && $lastPosSigCaseEnrich < ($lastPos + $mergeDist)) ## $stat[$myChrColNum] eq $lastChr &&
+{
+}
+else
+{
+        $JustPosIndex_caseEnrichDel++;
+}
 $CNVREnd=$lastPos;
-print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDel\n";#$CasesControls\n"; #Cases Controls Gene SIDs RFs
+if($caseEnrichDelSnps eq "")
+{
+}
+else
+{
+	print CNVR_caseEnrichDel "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDel\n";#$CasesControls\n"; #Cases Controls Gene SIDs RFs
+}
+if($lastChrSigControlEnrich eq $lastChrCon && $lastPosSigControlEnrich < ($lastPosCon + $mergeDist))
+{
+}
+else
+{
+        $JustPosIndex_controlEnrichDel++;
+}
 $CNVREndCon=$lastPosCon;
-print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDel\n"; #Cases Controls Gene SIDs RFs
+if($controlEnrichDelSnps eq "")
+{
+}
+else
+{
+	print CNVR_controlEnrichDel "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDel\n"; #Cases Controls Gene SIDs RFs
+}
 
 #DUPLICATIONS
 $JustPosIndex_caseEnrichDup=0;
@@ -867,6 +897,8 @@ while($snpStat=<DUP>)
                                         $CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
+					$lastChrSigCaseEnrich=$lastChr;
+					$lastPosSigCaseEnrich=$CNVREnd;
                                 }
                         }
                         $lastChr=$stat[$myChrColNum];
@@ -938,6 +970,8 @@ while($snpStat=<DUP>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
+					$lastChrSigControlEnrich=$lastChrCon;
+					$lastPosSigControlEnrich=$CNVREndCon;
                                 }
                         }
                         $lastChrCon=$stat[$myChrColNum];
@@ -953,10 +987,36 @@ while($snpStat=<DUP>)
 
 }
 #Exit Condition
+if($lastChrSigCaseEnrich eq $lastChr && $lastPosSigCaseEnrich < ($lastPos + $mergeDist))
+{
+}
+else
+{
+        $JustPosIndex_caseEnrichDup++;
+}
 $CNVREnd=$lastPos;
-print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDup\n"; #Cases Controls Gene SIDs RFs
+if($caseEnrichDupSnps eq "")
+{
+}
+else
+{
+	print CNVR_caseEnrichDup "$lastChr $CNVRStart $CNVREnd $CNVRP $CNVR_BTO $TagSnp $CNVRMaxP $JustPosIndex_caseEnrichDup\n"; #Cases Controls Gene SIDs RFs
+}
+if($lastChrSigControlEnrich eq $lastChrCon && $lastPosSigControlEnrich < ($lastPosCon + $mergeDist))
+{
+}
+else
+{
+        $JustPosIndex_controlEnrichDup++;
+}
 $CNVREndCon=$lastPosCon;
-print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDup\n"; #Cases Controls Gene SIDs RFs
+if($controlEnrichDupSnps eq "")
+{
+}
+else
+{
+	print CNVR_controlEnrichDup "$lastChrCon $CNVRStartCon $CNVREndCon $CNVRPCon $CNVR_BTOCon $TagSnpCon $CNVRMaxPCon $JustPosIndex_controlEnrichDup\n"; #Cases Controls Gene SIDs RFs
+}
 
 $c="grep . temp/$out"."caseEnrichDel.txt temp/$out"."controlEnrichDel.txt temp/$out"."caseEnrichDup.txt temp/$out"."controlEnrichDup.txt | sed '/:[\\ ]*\$/d' | sed 's/temp\\///' | sed 's/$out//' | sed 's/D/\td/' | sed 's/:/\t/' | sed 's/.txt//' | sed 's/Enrich//' | sort -k6,6g | awk '!_[\$1\$2\$10]++' | awk '{print \$3,\$4,\$5,\$6,\$7,\$8,\$9,\$1,\$2}' | sed 's/\ /\t/g' > temp/$out"."Report.txt";$o=`$c`;
 
