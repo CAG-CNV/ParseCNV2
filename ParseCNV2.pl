@@ -700,6 +700,14 @@ while($snpStat=<DEL>)
 					$CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
+					if($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T')
+                                        {
+                                                $CNVR_BTO=$stat[$myBetaTColNum];
+                                        }
+                                        elsif($myCaseEnrichStat eq 'OR')
+                                        {
+                                                $CNVR_BTO=$stat[$myORColNum];
+                                        }
 					#$lastChrSigCaseEnrich=$lastChr;
 					#$lastPosSigCaseEnrich=$CNVREnd;
 				}
@@ -771,6 +779,14 @@ while($snpStat=<DEL>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
+					if($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T')
+                                        {
+                                                $CNVR_BTOCon=$stat[$myBetaTColNum];
+                                        }
+                                        elsif($myCaseEnrichStat eq 'OR')
+                                        {
+                                                $CNVR_BTOCon=$stat[$myORColNum];
+                                        }
 					#$lastChrSigControlEnrich=$lastChrCon;
 					#$lastPosSigControlEnrich=$CNVREndCon;
                                 }
@@ -897,6 +913,14 @@ while($snpStat=<DUP>)
                                         $CNVRP=$stat[$myPColNum];
 					$CNVRMaxP=$stat[$myPColNum];
 					$TagSnp=$stat[$mySnpColNum];
+					if($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T')
+                                        {
+                                                $CNVR_BTO=$stat[$myBetaTColNum];
+                                        }
+                                        elsif($myCaseEnrichStat eq 'OR')
+                                        {
+                                                $CNVR_BTO=$stat[$myORColNum];
+                                        }
 					#$lastChrSigCaseEnrich=$lastChr;
 					#$lastPosSigCaseEnrich=$CNVREnd;
                                 }
@@ -970,6 +994,14 @@ while($snpStat=<DUP>)
                                         $CNVRPCon=$stat[$myPColNum];
 					$CNVRMaxPCon=$stat[$myPColNum];
 					$TagSnpCon=$stat[$mySnpColNum];
+					if($myCaseEnrichStat eq 'BETA' || $myCaseEnrichStat eq 'T')
+                                        {
+                                                $CNVR_BTOCon=$stat[$myBetaTColNum];
+                                        }
+                                        elsif($myCaseEnrichStat eq 'OR')
+                                        {
+                                                $CNVR_BTOCon=$stat[$myORColNum];
+                                        }
 					#$lastChrSigControlEnrich=$lastChrCon;
 					#$lastPosSigControlEnrich=$CNVREndCon;
                                 }
