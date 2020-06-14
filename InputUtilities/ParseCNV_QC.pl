@@ -551,11 +551,11 @@ $c="awk '{print \$1,\$2,\$3,\$4,\"./\"\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$
 `$c`;
 $c="perl ".$MyDirPre."../PerlModules/filter_cnv.pl $rawcnv"."_wPath -qclogfile $log"."_wPath -qcsumout QCsum.qcsum -out goodCNV.good.cnv -chroms 1-22";
 `$c`;
-$c="Rscript ".$MyDirPre."R/Dependencies.R; Rscript R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ./R";
+$c="Rscript ".$MyDirPre."R/Dependencies.R; Rscript ".$MyDirPre."R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ".$MyDirPre."./R";
 `$c`;
-$c="Rscript ".$MyDirPre."R/R_script_calculate_quality_score.R ./R";
+$c="Rscript ".$MyDirPre."R/R_script_calculate_quality_score.R ".$MyDirPre."./R";
 `$c`;
-$c="awk '{print \$1\"_chr\"\$2\":\"\$3\"-\"\$4\"\t\"\$NF}' log_CNV_summary_dataframe.txt > atob";
+$c="awk '{print \$1\"_chr\"\$2\":\"\$3\"-\"\$4\"\t\"\$NF}' ".$MyDirPre."log_CNV_summary_dataframe.txt > atob";
 `$c`;
 $c="awk '{print \$5\"_\"\$1\"\t\"\$0}' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt > a";
 `$c`;
