@@ -43,6 +43,7 @@ use Getopt::Long;
 GetOptions('i=s'=>\$input,'o=s'=>\$out,'b=s'=>\$build,'p=f'=>\$mergePVar,'d=i'=>\$mergeDist,'t'=>\$tdt,'m=f'=>\$maxPInclusion,'bfile=s'=>\$bfile,'qc'=>\$qc,'log=s'=>\$log,'c=s'=>\$cases,'q=s'=>\$quantitativeTrait,'batch=s'=>\$batch);
 BEGIN {($_=$0)=~s{[^\\\/]+$}{};$_||="./"}  ##In case running elsewhere
 $MyDirectoryPathPrefix = $_;
+#print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
 if (not $out)
 {
 	$out="ParseCNV_";
@@ -52,6 +53,8 @@ if (not $input)
 	print "ERROR: --i is a required input VCF or PennCNV rawcnv file or list of such files.\n";
 	exit;
 }
+$inputNoPath=$input;
+$inputNoPath=~s/.*\///;#get rid of potential path prefix
 $dir = 'temp';
 unless(-d $dir)
 {
@@ -59,7 +62,7 @@ unless(-d $dir)
 }
 if($input =~ /.txt/)
 {
-	$c="rm temp/$out$input.rawcnv2";$o=`$c`;
+	$c="rm temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	open(LISTFILE,$input);
 	while($line=<LISTFILE>)
 	{
@@ -67,11 +70,11 @@ if($input =~ /.txt/)
 		
 	if($line =~ /.vcf/)
 	{       ##TODO get build from vcf
-        	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $line | sort -k5,5 | grep -v '^#' | grep -v NOTICE >> temp/$out$input.rawcnv2";$o=`$c`;
+        	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $line | sort -k5,5 | grep -v '^#' | grep -v NOTICE >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
 	elsif($line =~ /.rawcnv/)
 	{
-        	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $line | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 >> temp/$out$input.rawcnv2";$o=`$c`;
+        	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $line | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
 	else
 	{
@@ -82,11 +85,11 @@ if($input =~ /.txt/)
 }
 elsif($input =~ /.vcf/)
 {	##TODO get build from vcf
-	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $input | sort -k5,5 | grep -v '^#' | grep -v NOTICE > temp/$out$input.rawcnv2";$o=`$c`;
+	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $input | sort -k5,5 | grep -v '^#' | grep -v NOTICE > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 }
 elsif($input =~ /.rawcnv/)
 {
-	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $input | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out$input.rawcnv2";$o=`$c`;
+	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $input | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 }
 else
 {
@@ -119,16 +122,17 @@ print "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on
 print LOG "Run Started ".$timeData[2].":".$timeData[1].":".$timeData[0]." $AmOrPm on ".$MonthPastStart{$timeData[4]}." ".$timeData[3]." ".$Year."\n";
 print $myCommandLine;
 print LOG $myCommandLine;
-if(!(-e "PerlModules/plink"))
+print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
+if(!(-e $MyDirectoryPathPrefix."PerlModules/plink"))
 {
-	$c="unzip PerlModules/plink.zip -d PerlModules";$o=`$c`;
-	$c="unzip GeneRef/hg19_gc5Base_SimFormat_AllCol.sorted.zip -d GeneRef";$o=`$c`;
-	$c="unzip GeneRef/hg19_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d GeneRef";$o=`$c`;
+	$c="unzip ".$MyDirectoryPathPrefix."PerlModules/plink.zip -d ".$MyDirectoryPathPrefix."PerlModules";$o=`$c`;
+	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/hg19_gc5Base_SimFormat_AllCol.sorted.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/hg19_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
 }
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
 $cmd="which R";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: R not found!\n";}
-$cmd="which PerlModules/plink";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: plink not found!\n";}
+$cmd="which ".$MyDirectoryPathPrefix."PerlModules/plink";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: plink not found!\n";}
 #$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
 $c="free -m | awk '{if(NR==2)printf\$4}'";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
 if(-e plink.sexcheck)
@@ -156,9 +160,9 @@ if($qc)
 	}
 	$o=`$c`;
 	print "$o\n";
-	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' Cases.rawcnv_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out$input.rawcnv2";$o=`$c`;
+	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' Cases.rawcnv_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 }
-$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$input.rawcnv2 | sort -u -k1,1 -k2,2n -t_ > temp/$out"."map";$o=`$c`;
+$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$inputNoPath.rawcnv2 | sort -u -k1,1 -k2,2n -t_ > temp/$out"."map";$o=`$c`;
 %h_state=();
 %chr_posIndex=();
 open(MAP,"temp/$out"."map");
@@ -175,23 +179,23 @@ while($line=<MAP>)
 }
 $diff[$lineNum]=1;#Exit at end
 
-$c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u > temp/$out"."AllIDs.txt";$o=`$c`;
+$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u > temp/$out"."AllIDs.txt";$o=`$c`;
 
 if(-e "plink.sexcheck")
 {
-	$c="awk '{if(NR>1)print \$2\"\\t\"\$4}' plink.sexcheck | sort > plink.sexcheck2; awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u > filteredSamples; join plink.sexcheck2 filteredSamples | awk '{print \$2}' > plink.sexcheck3";$o=`$c`;
-	$c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u | cat $cases - | sort | uniq -c | paste - plink.sexcheck3 | awk '{print \"0 \"\$2\" 0 0 \"\$3\" \"\$1}' > temp/$out"."fam";$o=`$c`;
+	$c="awk '{if(NR>1)print \$2\"\\t\"\$4}' plink.sexcheck | sort > plink.sexcheck2; awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u > filteredSamples; join plink.sexcheck2 filteredSamples | awk '{print \$2}' > plink.sexcheck3";$o=`$c`;
+	$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u | cat $cases - | sort | uniq -c | paste - plink.sexcheck3 | awk '{print \"0 \"\$2\" 0 0 \"\$3\" \"\$1}' > temp/$out"."fam";$o=`$c`;
 }
 else
 {
 	if($cases ne "")
 	{
-		$c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u | fgrep -vf - $cases > temp/$out"."casesNotInCNV.txt";$o=`$c`;
+		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u | fgrep -vf - $cases > temp/$out"."casesNotInCNV.txt";$o=`$c`;
 		$c="wc -l < temp/$out"."casesNotInCNV.txt";$o=`$c`;chomp($o);
 		if($o > 0)
 		{print "WARNING: $o specified cases are not present in the CNV file as listed in temp/$out"."casesNotInCNV.txt.\n";}
 		
-		$c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u >temp/$out"."uniq_ids";$o=`$c`;
+		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u >temp/$out"."uniq_ids";$o=`$c`;
 		$c="sed 's/\r//' $cases | sort -u | fgrep -vwf temp/$out"."casesNotInCNV.txt > temp/$out"."cases_NoCR_NoDup_Exists";$o=`$c`;
 		$c="cat temp/$out"."cases_NoCR_NoDup_Exists temp/$out"."uniq_ids | sort | uniq -c | awk '{print \"0 \"\$2\" 0 0 0 \"\$1}' | fgrep -wf temp/$out"."uniq_ids > temp/$out"."fam";$o=`$c`;
 		$c="awk '{print \$6}' temp/$out"."fam | sort -nr | uniq -c | awk '{if(NR==1){printf \$1\" cases, \"}else{printf \$1\" controls\"}}'";$o=`$c`;print"$o\n";print LOG "$o\n";
@@ -199,7 +203,7 @@ else
 	}
 	elsif($quantitativeTrait ne "")
 	{
-		$c="awk '{print \$5}' temp/$out$input.rawcnv2 | sort -u >temp/$out"."uniqIDs; sort $quantitativeTrait >temp/$out"."qt.sort; join temp/$out"."uniqIDs temp/$out"."qt.sort | awk '{print \"0 \"\$1\" 0 0 0 \"\$2}' > temp/$out"."fam";$o=`$c`;
+		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u >temp/$out"."uniqIDs; sort $quantitativeTrait >temp/$out"."qt.sort; join temp/$out"."uniqIDs temp/$out"."qt.sort | awk '{print \"0 \"\$1\" 0 0 0 \"\$2}' > temp/$out"."fam";$o=`$c`;
 		$c="wc -l temp/$out"."uniqIDs | awk '{ORS=\"\";print \$1}'";$samples=`$c`;
 		$c="wc -l $quantitativeTrait | awk '{ORS=\"\";print \$1}'";$traits=`$c`;
 		$c="wc -l temp/$out"."fam | awk '{ORS=\"\";print \$1}'";$samplesWTrait=`$c`;
@@ -245,9 +249,9 @@ open(my $BEDDELDUP, '>>:raw', 'temp/'.$out.'plinkDelDup.bed') or die "Unable to 
 
 #$| = 1; #Turn off buffering
 
-open(FILE,"temp/$out$input.rawcnv2");
+open(FILE,"temp/$out$inputNoPath.rawcnv2");
 $cnvLineNum=0;
-$LinesOfCalls=`wc -l < temp/$out$input.rawcnv2`;;
+$LinesOfCalls=`wc -l < temp/$out$inputNoPath.rawcnv2`;;
 print "\rProgress:","0","\%","\r";
 while($chrStaStoStaId=<FILE>)
 {
@@ -377,7 +381,7 @@ while($chrStaStoStaId=<FILE>)
 }
 #print "EXIT\n";
 #Exit last sample condition
-open(BIM,">temp/$out$input.rawcnv2.bim");
+open(BIM,">temp/$out$inputNoPath.rawcnv2.bim");
 while (($key, $value) = each(%h_state))
 {
 	@Chr_Pos=split(/_/,$key);
@@ -457,17 +461,17 @@ while (($key, $value) = each(%h_state))
 		close($BEDDEL);
 		close($BEDDUP);
 		close($BEDDELDUP);
-		$c="PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;#print"$c\n";print"$o\n";
-		$c="PerlModules/./plink --bed temp/$out"."plinkDup.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."dup";$o=`$c`;
-		$c="PerlModules/./plink --bed temp/$out"."plinkDelDup.bed --bim temp/$out$input.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
-		$c="PerlModules/./plink --bfile temp/$out"."del --assoc fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
-		$c="PerlModules/./plink --bfile temp/$out"."dup --assoc fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
-		$c="PerlModules/./plink --bfile temp/$out"."deldup --assoc fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;#print"$c\n";print"$o\n";
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."dup";$o=`$c`;#print"$c\n";print"$o\n";
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDelDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --assoc fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."dup --assoc fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."deldup --assoc fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 
 		#Get matching p-values to original ParseCNV with OR from assoc fisher
-		$c="PerlModules/./plink --bfile temp/$out"."del --model fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
-                $c="PerlModules/./plink --bfile temp/$out"."dup --model fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
-                $c="PerlModules/./plink --bfile temp/$out"."deldup --model fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --model fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
+                $c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."dup --model fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
+                $c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."deldup --model fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 		
 		$c="awk '{print \$2\"\\t\"\$0}' temp/$out"."del.assoc.fisher | sort -k1,1 > temp/$out"."del.assoc.fisher.forJoin";$o=`$c`;
 		$c="awk '{if(\$5==\"GENO\")print \$2\"\\t\"\$NF\"\\t\"\$(NF-2)\"\\t\"\$(NF-1)}' temp/$out"."del.model | sort -k1,1 > temp/$out"."del.model.forJoin";$o=`$c`;
@@ -483,9 +487,9 @@ while (($key, $value) = each(%h_state))
                 $c="join temp/$out"."deldup.assoc.fisher.forJoin temp/$out"."deldup.model.forJoin | sort -k2,2 -k4,4n >> temp/$out"."deldup.assoc.fisher.model";$o=`$c`;
 		if($tdt ne "")
         	{
-			$c="PerlModules/./plink --bfile temp/$out"."del --tdt --allow-no-sex --out temp/$out"."del";$o=`$c`;
-                	$c="PerlModules/./plink --bfile temp/$out"."dup --tdt --allow-no-sex --out temp/$out"."dup";$o=`$c`;
-                	$c="PerlModules/./plink --bfile temp/$out"."deldup --tdt --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
+			$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --tdt --allow-no-sex --out temp/$out"."del";$o=`$c`;
+                	$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."dup --tdt --allow-no-sex --out temp/$out"."dup";$o=`$c`;
+                	$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."deldup --tdt --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 		}	
 		#$c="perl OutputUtilities/InsertPlinkPvalues.pl";$o=`$c`;
 print("\rProgress:100\%\n");
@@ -1060,7 +1064,7 @@ while($line=<REPORT>)
 	chomp($line);
 	@a=split(/\t/,$line);
 	#print "$a[5]\n";
-	$c="echo $a[5] > temp/$out"."TagSnp; PerlModules/./plink --bfile temp/$out$a[8] --extract temp/$out"."TagSnp --recode --allow-no-sex --out temp/$out"."TagSnp";$o=`$c`;#print "$c\n$o\n";
+	$c="echo $a[5] > temp/$out"."TagSnp; $MyDirectoryPathPrefix"."PerlModules/./plink --bfile temp/$out$a[8] --extract temp/$out"."TagSnp --recode --allow-no-sex --out temp/$out"."TagSnp";$o=`$c`;#print "$c\n$o\n";
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk 'BEGIN{cases=0}{if(\$6==2)cases++}END{ORS=\"\";print cases}'";$Cases=`$c`;
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk 'BEGIN{controls=0}{if(\$6==1)controls++}END{ORS=\"\";print controls}'";$Controls=`$c`;
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk '{print \$2\"\\t\"\$6}' | awk '{if(\$2==2)printf \$1\",\"}' | sed 's/,\$//'";$CaseSIDs=`$c`;
@@ -1068,7 +1072,7 @@ while($line=<REPORT>)
 	print REPORT2 "$line\t$Cases\t$Controls\t$CaseSIDs\t$ControlSIDs\n";
 	print ChrPosRanges "$a[0]:$a[1]-$a[2]\n";
 }
-$c="perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/$out"."ChrPosRanges GeneRef/".$build."_knownGene.txt -knowngene "."-kgxref GeneRef/".$build."_kgXref.txt -expandmax 5m | sed 's/^NOT_FOUND\\t0\\t[^\\t]*/NA\tNA/'| sed 's/^chr[^\\t]*\\t//' | awk '{if(\$2>0){print\$1\"-closest\"}else{print\$1}}' > temp/".$out."CNVR_SigCallsGene_Col23.txt";$o=`$c`;
+$c="perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/$out"."ChrPosRanges ".$MyDirectoryPathPrefix."GeneRef/".$build."_knownGene.txt -knowngene "."-kgxref ".$MyDirectoryPathPrefix."GeneRef/".$build."_kgXref.txt -expandmax 5m | sed 's/^NOT_FOUND\\t0\\t[^\\t]*/NA\tNA/'| sed 's/^chr[^\\t]*\\t//' | awk '{if(\$2>0){print\$1\"-closest\"}else{print\$1}}' > temp/".$out."CNVR_SigCallsGene_Col23.txt";$o=`$c`;
 #$command = "perl ".$MyDirectoryPathPrefix."PerlModules/scan_region.pl temp/".$out."ChrPosRanges_DEL.txt ".$MyDirectoryPathPrefix."GeneRef/".$build."_knownGene.txt -knowngene "."-kgxref ".$MyDirectoryPathPrefix."GeneRef/".$build."_kgXref.txt -expandmax 5m | sed 's/^NOT_FOUND\\t0\\t[^\\t]*\\t\\t//' | sed 's/^chr[^\\t]*\\t//' > temp/".$out."SigCallsGene_DEL_Col23.txt";
 
 #RFs: SegDups (count, max, avg) DgvEntries      TeloCentro      AvgGC   AvgProbes       Recurrent       PopFreq PenMaxP_Freq_HighFreq           FreqInflated    Sparse  ABFreq  AvgConf AvgLength
@@ -1223,9 +1227,9 @@ while($line=<REPORT>)
 	$RF=0;
 }
 #$countLines--;
-$c="sort -k1,1 -k2,2n temp/$out$input.rawcnv2 | sed 's/\\t\$//' > temp/$out$input.rawcnv2Sorted";$o=`$c`;
+$c="sort -k1,1 -k2,2n temp/$out$inputNoPath.rawcnv2 | sed 's/\\t\$//' > temp/$out$inputNoPath.rawcnv2Sorted";$o=`$c`;
 $c="awk '{print \$10\"\\t\"\$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9}' $out"."Report.txt | sed 's/_/\\t/' | awk '{print \$1\"\\t\"\$2\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10\"\\t\"\$11}' | sort -k1,1 -k2,2n | grep -v tag > $out"."Report.txtSorted";$o=`$c`;
-$c=$MyDirectoryPathPrefix."PerlModules/bedtools intersect -a temp/$out$input.rawcnv2Sorted -b $out"."Report.txtSorted -sorted -wo | awk '{if((\$4<2&&\$(NF-1)==\"del\")||(\$4>=2&&\$(NF-1)==\"dup\"))print}' > $out"."Report_ContributingCalls.txt";$o=`$c`;
+$c=$MyDirectoryPathPrefix."PerlModules/bedtools intersect -a temp/$out$inputNoPath.rawcnv2Sorted -b $out"."Report.txtSorted -sorted -wo | awk '{if((\$4<2&&\$(NF-1)==\"del\")||(\$4>=2&&\$(NF-1)==\"dup\"))print}' > $out"."Report_ContributingCalls.txt";$o=`$c`;
 if($countLines>0)
 {
 	$FailRate=$overallFail/$countLines;
@@ -1245,17 +1249,20 @@ close(SNP_IDS);
 if($batch ne "")
 {
 	$c="perl OutputUtilities/PercentSamples.pl $batch temp/$out"."Snp_IDs.txt";$o=`$c`;
-	$c="cat header temp/$out"."Report6.txt > temp/$out"."Report_Verbose.txt; mv temp/$out"."Report_Verbose.txt temp/$out"."Report6.txt";$o=`$c`;
+	$c="cat ".$MyDirectoryPathPrefix."header temp/$out"."Report6.txt > temp/$out"."Report_Verbose.txt; mv temp/$out"."Report_Verbose.txt temp/$out"."Report6.txt";$o=`$c`;
 	$c="cat temp/$out"."Snp_IDs.txt_CohortCounts.txt | cut -f 2- > temp/$out"."Snp_IDs.txt_CohortCounts_Cols.txt; paste temp/$out"."Report6.txt temp/$out"."Snp_IDs.txt_CohortCounts_Cols.txt > $out"."Report_Verbose.txt";$o=`$c`;
 	
 }
 else
 {
-	$c="cat header temp/$out"."Report6.txt > $out"."Report_Verbose.txt";$o=`$c`;
+	$c="cat ".$MyDirectoryPathPrefix."header temp/$out"."Report6.txt > $out"."Report_Verbose.txt";$o=`$c`;
 }
 
 print"Output written to $out"."Report.txt\n";
 print LOG "Output written to $out"."Report.txt\n";
+
+#$GIFDel = median ( @DelSnps_x2 ) / 0.456 ; ####### http://en.wikipedia.org/wiki/Population_stratification 1-d.f. x2 distribution independence assumption! so somehow need to prune down to all CNVRs for all significance levels
+#$GIFDup = median ( @DupSnps_x2 ) / 0.456 ; ####### Always 0 because median x2=0 (fisher p=1) from a majority of SNPs not having any CNVs need to prune out
 
 open(ALLIDS,"temp/$out"."AllIDs.txt");
 open(VCF,">$out"."Report_Verbose.vcf");
