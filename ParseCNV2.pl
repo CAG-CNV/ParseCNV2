@@ -73,8 +73,25 @@ if($input =~ /.txt/)
         	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $line | sort -k5,5 | grep -v '^#' | grep -v NOTICE >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
 	elsif($line =~ /.rawcnv/)
-	{
-        	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $line | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
+	{	
+		chomp($line);
+		open(RAWCNVFILE,$line);
+		open(RAWCNVCLEANFILE,">temp/$out$inputNoPath.rawcnv");
+		while(<RAWCNVFILE>)
+		{
+			chomp;
+			if (m/^(?:chr)?(\w+):(\d+)-(\d+)\s+numsnp=(\d+)\s+length=(\S+)\s+state(\d),cn=(\d)\s+(.+?)\s+startsnp=(\S+)\s+endsnp=(\S+)/)
+			{
+				print RAWCNVCLEANFILE "$_\n";
+			}
+			else
+			{
+				$skipped_line++;
+			}
+		}
+		$skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats\n";
+		close(RAWCNVCLEANFILE);
+        	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' temp/$out$inputNoPath.rawcnv | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
 	else
 	{
@@ -89,7 +106,24 @@ elsif($input =~ /.vcf/)
 }
 elsif($input =~ /.rawcnv/)
 {
-	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' $input | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
+	open(RAWCNVFILE,$input);
+        open(RAWCNVCLEANFILE,">temp/$out$inputNoPath.rawcnv");
+                while(<RAWCNVFILE>)
+                {
+                        chomp;
+                        if (m/^(?:chr)?(\w+):(\d+)-(\d+)\s+numsnp=(\d+)\s+length=(\S+)\s+state(\d),cn=(\d)\s+(.+?)\s+startsnp=(\S+)\s+endsnp=(\S+)/)
+                        {
+                                print RAWCNVCLEANFILE "$_\n";
+                        }
+                        else
+                        {
+                                $skipped_line++;
+                        }
+                }
+                $skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats\n";
+                close(RAWCNVCLEANFILE);
+
+	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' temp/$out$inputNoPath.rawcnv | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 }
 else
 {
@@ -198,7 +232,7 @@ else
 		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u >temp/$out"."uniq_ids";$o=`$c`;
 		$c="sed 's/\r//' $cases | sort -u | fgrep -vwf temp/$out"."casesNotInCNV.txt > temp/$out"."cases_NoCR_NoDup_Exists";$o=`$c`;
 		$c="cat temp/$out"."cases_NoCR_NoDup_Exists temp/$out"."uniq_ids | sort | uniq -c | awk '{print \"0 \"\$2\" 0 0 0 \"\$1}' | fgrep -wf temp/$out"."uniq_ids > temp/$out"."fam";$o=`$c`;
-		$c="awk '{print \$6}' temp/$out"."fam | sort -nr | uniq -c | awk '{if(NR==1){printf \$1\" cases, \"}else{printf \$1\" controls\"}}'";$o=`$c`;print"$o\n";print LOG "$o\n";
+		$c="awk '{print \$6}' temp/$out"."fam | sort -nr | uniq -c | awk '{if(\$2==2){printf \$1\" cases, \"}else{printf \$1\" controls\"}}'";$o=`$c`;print"$o\n";print LOG "$o\n";
 		
 	}
 	elsif($quantitativeTrait ne "")
@@ -391,7 +425,9 @@ while (($key, $value) = each(%h_state))
 	if($Chr_Pos[0]=="XY"){$Chr_Pos[0]=25;}
 	if($Chr_Pos[0]=="M" || $Chr_Pos[0]=="MT"){$Chr_Pos[0]=26;}
 	print BIM "$Chr_Pos[0]\t$key\t0\t$Chr_Pos[1]\t1\t2\n";
+	$countSNPs++;
 }
+close(BIM);
                 while (($key, $value) = each(%h_state))
                 {
                         #print $key.",".$value."\n";
@@ -493,6 +529,7 @@ while (($key, $value) = each(%h_state))
 		}	
 		#$c="perl OutputUtilities/InsertPlinkPvalues.pl";$o=`$c`;
 print("\rProgress:100\%\n");
+print "$countSNPs probes with observed CNV breakpoints\n";
 if (not $mergePVar)
 {       
         $mergePVar=1;
