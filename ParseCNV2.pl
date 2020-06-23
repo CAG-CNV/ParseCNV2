@@ -77,6 +77,7 @@ if($input =~ /.txt/)
 		chomp($line);
 		open(RAWCNVFILE,$line);
 		open(RAWCNVCLEANFILE,">temp/$out$inputNoPath.rawcnv");
+		open(RAWCNVBADFILE,">temp/$out$inputNoPath.badcnv");
 		while(<RAWCNVFILE>)
 		{
 			chomp;
@@ -86,10 +87,11 @@ if($input =~ /.txt/)
 			}
 			else
 			{
+				print RAWCNVBADFILE "$_\n";
 				$skipped_line++;
 			}
 		}
-		$skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats\n";
+		$skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats as listed in temp/$out$inputNoPath.badcnv\n";
 		close(RAWCNVCLEANFILE);
         	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' temp/$out$inputNoPath.rawcnv | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
@@ -108,6 +110,7 @@ elsif($input =~ /.rawcnv/)
 {
 	open(RAWCNVFILE,$input);
         open(RAWCNVCLEANFILE,">temp/$out$inputNoPath.rawcnv");
+	open(RAWCNVBADFILE,">temp/$out$inputNoPath.badcnv");
                 while(<RAWCNVFILE>)
                 {
                         chomp;
@@ -117,10 +120,11 @@ elsif($input =~ /.rawcnv/)
                         }
                         else
                         {
+				print RAWCNVBADFILE "$_\n";
                                 $skipped_line++;
                         }
                 }
-                $skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats\n";
+                $skipped_line and print "WARNING: $skipped_line lines were skipped due to unrecognizable formats as listed in temp/$out$inputNoPath.badcnv\n";
                 close(RAWCNVCLEANFILE);
 
 	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' temp/$out$inputNoPath.rawcnv | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
