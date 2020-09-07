@@ -164,8 +164,13 @@ print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
 if(!(-e $MyDirectoryPathPrefix."PerlModules/plink"))
 {
 	$c="unzip ".$MyDirectoryPathPrefix."PerlModules/plink.zip -d ".$MyDirectoryPathPrefix."PerlModules";$o=`$c`;
-	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/hg19_gc5Base_SimFormat_AllCol.sorted.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
-	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/hg19_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_gc5Base_SimFormat_AllCol.sorted.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+	if(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt.zip")
+	{
+		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_kgXref.txt.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+	}
 }
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
@@ -241,7 +246,14 @@ else
 	}
 	elsif($quantitativeTrait ne "")
 	{
-		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u >temp/$out"."uniqIDs; sort $quantitativeTrait >temp/$out"."qt.sort; join temp/$out"."uniqIDs temp/$out"."qt.sort | awk '{print \"0 \"\$1\" 0 0 0 \"\$2}' > temp/$out"."fam";$o=`$c`;
+		$c="awk '{print \$1}' $quantitativeTrait > temp/$quantitativeTrait"."_IDs; awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u | fgrep -vf - temp/$quantitativeTrait"."_IDs > temp/$out"."casesNotInCNV.txt";$o=`$c`;
+                $c="wc -l < temp/$out"."casesNotInCNV.txt";$o=`$c`;chomp($o);
+                if($o > 0)
+                {print "WARNING: $o specified samples are not present in the CNV file as listed in temp/$out"."casesNotInCNV.txt.\n";}
+		
+		$c="awk '{print \$5}' temp/$out$inputNoPath.rawcnv2 | sort -u >temp/$out"."uniqIDs";$o=`$c`;
+		$c="sed 's/\r//' temp/$quantitativeTrait"."_IDs | sort -u | fgrep -vwf temp/$out"."casesNotInCNV.txt > temp/$out"."cases_NoCR_NoDup_Exists";$o=`$c`;
+		$c="sort $quantitativeTrait >temp/$out"."qt.sort; join temp/$out"."cases_NoCR_NoDup_Exists temp/$out"."qt.sort | awk '{print \"0 \"\$1\" 0 0 0 \"\$2}' > temp/$out"."fam";$o=`$c`;
 		$c="wc -l temp/$out"."uniqIDs | awk '{ORS=\"\";print \$1}'";$samples=`$c`;
 		$c="wc -l $quantitativeTrait | awk '{ORS=\"\";print \$1}'";$traits=`$c`;
 		$c="wc -l temp/$out"."fam | awk '{ORS=\"\";print \$1}'";$samplesWTrait=`$c`;
@@ -508,6 +520,8 @@ close(BIM);
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."dup --assoc fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."deldup --assoc fisher --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 
+		if($cases ne "")
+		{
 		#Get matching p-values to original ParseCNV with OR from assoc fisher
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --model fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
                 $c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."dup --model fisher --allow-no-sex --out temp/$out"."dup";$o=`$c`;
@@ -525,6 +539,7 @@ close(BIM);
                 $c="awk '{if(\$5==\"GENO\")print \$2\"\\t\"\$NF\"\\t\"\$(NF-2)\"\\t\"\$(NF-1)}' temp/$out"."deldup.model | sort -k1,1 > temp/$out"."deldup.model.forJoin";$o=`$c`;
                 $c="echo SNP CHR SNP BP A1 F_A F_U A2 P_ASSOC OR P AFF UNAFF > temp/$out"."deldup.assoc.fisher.model";$o=`$c`;
                 $c="join temp/$out"."deldup.assoc.fisher.forJoin temp/$out"."deldup.model.forJoin | sort -k2,2 -k4,4n >> temp/$out"."deldup.assoc.fisher.model";$o=`$c`;
+		}
 		if($tdt ne "")
         	{
 			$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --tdt --allow-no-sex --out temp/$out"."del";$o=`$c`;
@@ -1110,6 +1125,10 @@ while($line=<REPORT>)
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk 'BEGIN{controls=0}{if(\$6==1)controls++}END{ORS=\"\";print controls}'";$Controls=`$c`;
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk '{print \$2\"\\t\"\$6}' | awk '{if(\$2==2)printf \$1\",\"}' | sed 's/,\$//'";$CaseSIDs=`$c`;
 	$c="grep -v \"2 2\$\" temp/$out"."TagSnp.ped | awk '{print \$2\"\\t\"\$6}' | awk '{if(\$2==1)printf \$1\",\"}' | sed 's/,\$//'";$ControlSIDs=`$c`;
+	if($Cases==0)
+	{$CasesSIDs="NA";}
+	if($Controls==0)
+	{$ControlSIDs="NA";}
 	print REPORT2 "$line\t$Cases\t$Controls\t$CaseSIDs\t$ControlSIDs\n";
 	print ChrPosRanges "$a[0]:$a[1]-$a[2]\n";
 }
