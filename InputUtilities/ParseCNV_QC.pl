@@ -132,13 +132,13 @@ if($output=~/eigvals/)
 elsif($output=~/FID/)
 {
 	print "MATCH MDS\n";
-	$c="awk '{print \$2\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7}' $popstrat > $popstrat"."_Standard.txt";print"$c\n";$output=`$c`;
+	$c="awk '{print \$2\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7}' $popstrat | sed '1d' > $popstrat"."_Standard.txt";print"$c\n";$output=`$c`;
 	$PCAOrMDS="MDS";
 }
 else
 {
 	print "MATCH PCA\n";
-        $c="cp $popstrat $popstrat"."_Standard.txt";print"$c\n";$output=`$c`;
+        $c="awk '{print \$2\"\\t\"\$3\"\\t\"\$4}' $popstrat > $popstrat"."_Standard.txt";print"$c\n";$output=`$c`;
         $PCAOrMDS="PCA";
 	print "No header on population stratification file so assuming PCA $popstrat\n";
 }
@@ -550,11 +550,11 @@ $c="cat $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | awk '{print \$1,\$2,\$3,\$4
 $c="awk '{print \$1,\$2,\$3,\$4,\"./\"\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14}' $log > $log"."_wPath";
 `$c`;
 $c="perl ".$MyDirPre."../PerlModules/filter_cnv.pl $rawcnv"."_wPath -qclogfile $log"."_wPath -qcsumout QCsum.qcsum -out goodCNV.good.cnv -chroms 1-22";
-`$c`;
-$c="Rscript ".$MyDirPre."R/Dependencies.R; Rscript ".$MyDirPre."R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ".$MyDirPre."./R";
-`$c`;
+@o=`$c`;print(@o."\n");
+$c="mkdir tmp; Rscript ".$MyDirPre."R/Dependencies.R; Rscript ".$MyDirPre."R/R_script_convert_raw_cnv.R $rawcnv"."_wPath QCsum.qcsum ".$MyDirPre."./R";
+@o=`$c`;print(@o."\n");
 $c="Rscript ".$MyDirPre."R/R_script_calculate_quality_score.R ".$MyDirPre."./R";
-`$c`;
+@o=`$c`;print(@o."\n");
 $c="awk '{print \$1\"_chr\"\$2\":\"\$3\"-\"\$4\"\t\"\$NF}' ".$MyDirPre."log_CNV_summary_dataframe.txt > atob";
 `$c`;
 $c="awk '{print \$5\"_\"\$1\"\t\"\$0}' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt > a";
