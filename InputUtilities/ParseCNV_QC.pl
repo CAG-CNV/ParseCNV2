@@ -545,9 +545,9 @@ chomp($CountSamplesQCRemoved);
 
 #TO DO Separate By CN State
 
-$c="cat $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | awk '{print \$1,\$2,\$3,\$4,\"./\"\$5,\$6,\$7,\$8}' | sed 's/chrX/chr23/' | sed 's/chrY/chr24/' | sed 's/state4,cn=2/state5,cn=3/' > $rawcnv"."_wPath";
+$c="cat $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | awk '{if(\$5~\"^/\"){prefix=\".\"}else{prefix=\"./\"};print \$1,\$2,\$3,\$4,prefix\$5,\$6,\$7,\$8}' | sed 's/chrX/chr23/' | sed 's/chrY/chr24/' | sed 's/state4,cn=2/state5,cn=3/' > $rawcnv"."_wPath";
 `$c`;
-$c="awk '{print \$1,\$2,\$3,\$4,\"./\"\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14}' $log > $log"."_wPath";
+$c="awk '{if(\$5~\"^/\"){prefix=\".\"}else{prefix=\"./\"};print \$1,\$2,\$3,\$4,prefix\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14}' $log > $log"."_wPath";
 `$c`;
 $c="perl ".$MyDirPre."../PerlModules/filter_cnv.pl $rawcnv"."_wPath -qclogfile $log"."_wPath -qcsumout QCsum.qcsum -out goodCNV.good.cnv -chroms 1-22";
 @o=`$c`;print(join('',@o)."\n");
