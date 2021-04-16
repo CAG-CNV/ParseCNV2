@@ -67,7 +67,7 @@ Other available PennCNV log quality metrics I do not use typically: LRR_mean (lo
 exit;
 }
 use Getopt::Long;
-GetOptions('log=s'=>\$log,'rawcnv=s'=>\$rawcnv,'callrate=s'=>\$callrate,'popstrat=s'=>\$popstrat,'related=s'=>\$related,'out=s'=>\$out,'qccallrate=s'=>\$qccallrate,'qclrrsd=s'=>\$qclrrsd,'qcgcwf=s'=>\$qcgcwf,'qcnumcnv=s'=>\$qcnumcnv,'qcrelated=s'=>\$qcrelated,'numsnp=s'=>\$numsnp,'length=s'=>\$length,'confidence=s'=>\$confidence,'quality=s'=>\$quality,'stratifyCN'=>\$stratifyCN);
+GetOptions('log=s'=>\$log,'rawcnv=s'=>\$rawcnv,'callrate=s'=>\$callrate,'popstrat=s'=>\$popstrat,'related=s'=>\$related,'out=s'=>\$out,'qccallrate=s'=>\$qccallrate,'qclrrsd=s'=>\$qclrrsd,'qcgcwf=s'=>\$qcgcwf,'qcnumcnv=s'=>\$qcnumcnv,'qcrelated=s'=>\$qcrelated,'numsnp=s'=>\$numsnp,'length=s'=>\$length,'confidence=s'=>\$confidence,'quality=s'=>\$quality,'stratifyCN'=>\$stratifyCN,'noSampleQC'=>\$noSampleQC,'noCallQC'=>\$noCallQC);
 
 ##perl ParseCNV_QC.pl --log PennCNV_Omni1.log --rawcnv file.rawcnv --callrate PCGC_Omni25-8v1_BED_Miss.imiss --popstrat file.pca.evec --related PCGC_Omni25-8v1_BED_GenomeAll.genome
 
@@ -99,7 +99,7 @@ $c="grep summary $log | grep -v Xmean > $log"."_QC.log";print"$c\n";`$c`; #PennC
 
 $c="head -1 $log"."_QC.log | sed 's/=[^ ]* / /g' | sed 's/=.*//' | sed 's/for.*:/for ChipID/' > Header_"."$log.txt";print"$c\n";`$c`;
 
-$c="sed 's/ [^ ]*=/ /g' $log"."_QC.log | sed 's/\\/.*\\/[^ ]*\\.//' | sed 's/\\://g' > $log"."_QC_Vals.log";print"$c\n";`$c`;
+$c="sed 's/ [^ ]*=/ /g' $log"."_QC.log | sed 's/\\://g' > $log"."_QC_Vals.log";print"$c\n";`$c`;
 
 $c="cat Header_$log.txt $log"."_QC_Vals.log > $log"."_QC_Vals_Header.log";print"$c\n";`$c`;
 
@@ -522,7 +522,7 @@ system ("R CMD BATCH $out.AllRes.R");
 select(STDOUT);
 if ($? == 0) {
   #print "  - command executed successfully!\n";
-  $c="head $out"."QC_RemoveIDs.txt";print"=======The Remove Sample IDs Report first 10 lines=======\n";$output=`$c`;print"$output\n";  
+  $c="head $out"."QC_RemoveIDs.txt";print"=======The Remove Sample IDs Report first 10 lines=======\n";$output=`$c`;if($noSampleQC){$output="NA: noSampleQC";$c="echo -n > $out"."QC_RemoveIDs.txt";`$c`};print"$output\n";  
 }
 else {
   print "Error: cannot execute system command R CMD BATCH $out.AllRes.R PLEASE TRY RUNNING \"export R_LIBS=./\" \n";
@@ -535,10 +535,11 @@ else {
 
 $c="perl ".$MyDirPre."FilterCNV.pl $out"."QC_RemoveIDs.txt $rawcnv 5 remove";
 `$c`;
+if($noSampleQC){$c="cp $rawcnv $rawcnv"."_remove_".$out."QC_RemoveIDs.txt";`$c`;}
 $c="sed 's/[^\ ]*=//g' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt | sed 's/,//g' > a; awk '{print \$0\"\\t\"NR}' a > $rawcnv"."_remove_".$out."QC_RemoveIDs_JustNum.txt";
 `$c`;
-$c="awk '{print \$1}' $out"."QC_RemoveIDs.txt | sed '1d' | sort -u | wc -l";
-$CountSamplesQCRemoved=`$c`;
+if($noSampleQC){}else{$c="awk '{print \$1}' $out"."QC_RemoveIDs.txt | sed '1d' | sort -u | wc -l"}
+if($noSampleQC){$CountSamplesQCRemoved=0;}else{$CountSamplesQCRemoved=`$c`};
 chomp($CountSamplesQCRemoved);
 
 #TO DO Print Percent Samples and Calls Removed By QC
@@ -557,7 +558,7 @@ $c="Rscript ".$MyDirPre."R/R_script_calculate_quality_score.R ".$MyDirPre."./R";
 @o=`$c`;print(join('',@o)."\n");
 $c="awk '{print \$1\"_chr\"\$2\":\"\$3\"-\"\$4\"\t\"\$NF}' ".$MyDirPre."log_CNV_summary_dataframe.txt > atob";
 `$c`;
-$c="awk '{print \$5\"_\"\$1\"\t\"\$0}' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt > a";
+$c="awk '{gsub(/.*\\//,\"\",\$5);print \$5\"_\"\$1\"\t\"\$0}' $rawcnv"."_remove_".$out."QC_RemoveIDs.txt > a";
 `$c`;
 $c="perl ".$MyDirPre."../PerlModules/Vlookup.pl atob a | sed 's/[^\\t]*\\t//' | awk '{print \$0\"\\t\"NR}' > $rawcnv"."_remove_".$out."QC_RemoveIDs.txt"."_wMaceQualityScore";
 `$c`;
@@ -746,7 +747,7 @@ system ("R CMD BATCH $out.AllRes2.R");
 select(STDOUT);
 if ($? == 0) {
   #print "  - command executed successfully!\n";
-  $c="head $out"."QC_RemoveCalls.txt";print"=======The Remove Call IDs Report first 10 lines=======\n";$output=`$c`;print"$output\n";  
+  $c="head $out"."QC_RemoveCalls.txt";print"=======The Remove Call IDs Report first 10 lines=======\n";$output=`$c`;if($noCallQC){$output="NA: noCallQC"};print"$output\n";  
 }
 else {
   print "Error\n";
@@ -755,6 +756,7 @@ else {
 }
 $c="awk '{print \$4}' $out"."QC_RemoveCalls.txt > $out"."QC_RemoveCalls.txt_Indexes";`$c`;
 $c="perl ".$MyDirPre."FilterCNV.pl $out"."QC_RemoveCalls.txt_Indexes $rawcnv"."_remove_"."$out"."QC_RemoveIDs.txt_wMaceQualityScore"." 10 remove";`$c`;
+if($noCallQC){$c="cp $rawcnv"."_remove_"."$out"."QC_RemoveIDs.txt_wMaceQualityScore $rawcnv"."_remove_"."$out"."QC_RemoveIDs.txt_wMaceQualityScore_remove_"."$out"."QC_RemoveCalls.txt_Indexes; echo -n > $out"."QC_RemoveCalls.txt";`$c`;}
 $c="awk '{print \$4}' $out"."QC_RemoveCalls.txt | sed '1d' | sort -u | wc -l";
 $CountCallsQCRemoved=`$c`;
 chomp($CountCallsQCRemoved);
