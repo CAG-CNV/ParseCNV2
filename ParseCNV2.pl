@@ -60,7 +60,7 @@ unless(-d $dir)
 {
     mkdir $dir or die;
 }
-if($input =~ /.txt/)
+if($input =~ /\.txt/)
 {
 	$c="rm temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	open(LISTFILE,$input);
@@ -68,11 +68,11 @@ if($input =~ /.txt/)
 	{
 		chomp($line);
 		
-	if($line =~ /.vcf/)
+	if($line =~ /\.vcf/)
 	{       ##TODO get build from vcf
         	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $line | sort -k5,5 | grep -v '^#' | grep -v NOTICE >> temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 	}
-	elsif($line =~ /.rawcnv/)
+	elsif($line =~ /\.rawcnv/)
 	{	
 		chomp($line);
 		open(RAWCNVFILE,$line);
@@ -102,11 +102,11 @@ if($input =~ /.txt/)
 
 	}
 }
-elsif($input =~ /.vcf/)
+elsif($input =~ /\.vcf/)
 {	##TODO get build from vcf
 	$c="perl InputFormatConversion/ConvertVCFtoPennCNV.pl $input | sort -k5,5 | grep -v '^#' | grep -v NOTICE > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
 }
-elsif($input =~ /.rawcnv/)
+elsif($input =~ /\.rawcnv/)
 {
 	open(RAWCNVFILE,$input);
         open(RAWCNVCLEANFILE,">temp/$out$inputNoPath.rawcnv");
