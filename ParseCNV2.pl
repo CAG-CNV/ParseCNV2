@@ -164,13 +164,33 @@ print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
 if(!(-e $MyDirectoryPathPrefix."PerlModules/plink"))
 {
 	$c="unzip ".$MyDirectoryPathPrefix."PerlModules/plink.zip -d ".$MyDirectoryPathPrefix."PerlModules";$o=`$c`;
+}
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_gc5Base_SimFormat_AllCol.sorted"))
+{
 	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_gc5Base_SimFormat_AllCol.sorted.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+}
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs"))
+{
 	$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
-	if(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt.zip")
-	{
+}
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt"))
+{
+	#if(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt.zip")
+	#{
 		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene.txt.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_kgXref.txt"))
+{
 		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_kgXref.txt.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
-	}
+}
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_gc5Base_SimFormat_AllCol.sorted"))
+{
+		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_gc5Base_SimFormat_AllCol.sorted.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+}
+if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs"))
+{
+		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
+}	#}
+}
 }
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
@@ -513,7 +533,7 @@ close(BIM);
 		close($BEDDEL);
 		close($BEDDUP);
 		close($BEDDELDUP);
-		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;print"$c\n";print"$o\n";
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;#print"$c\n";print"$o\n";
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."dup";$o=`$c`;#print"$c\n";print"$o\n";
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDelDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --assoc fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
