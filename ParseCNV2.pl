@@ -513,7 +513,7 @@ close(BIM);
 		close($BEDDEL);
 		close($BEDDUP);
 		close($BEDDELDUP);
-		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;#print"$c\n";print"$o\n";
+		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDel.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."del";$o=`$c`;print"$c\n";print"$o\n";
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."dup";$o=`$c`;#print"$c\n";print"$o\n";
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bed temp/$out"."plinkDelDup.bed --bim temp/$out$inputNoPath.rawcnv2.bim --fam temp/$out"."fam --make-bed --allow-no-sex --out temp/$out"."deldup";$o=`$c`;
 		$c=$MyDirectoryPathPrefix."PerlModules/./plink --bfile temp/$out"."del --assoc fisher --allow-no-sex --out temp/$out"."del";$o=`$c`;
