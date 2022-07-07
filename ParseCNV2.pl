@@ -191,7 +191,6 @@ if(!(-e $MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllC
 		$c="unzip ".$MyDirectoryPathPrefix."GeneRef/$build"."_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d ".$MyDirectoryPathPrefix."GeneRef";$o=`$c`;
 }	#}
 }
-}
 #Check presence and version of dependencies
 $cmd="which bash";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: bash not found!\n";}
 $cmd="which R";$o=`$cmd`; print LOG "$o"; if($o=~" no "){print "ERROR: R not found!\n";}
