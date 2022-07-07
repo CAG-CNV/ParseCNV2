@@ -222,9 +222,9 @@ if($qc)
 	}
 	$o=`$c`;
 	print "$o\n";
-	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' Cases.rawcnv_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;
+	$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' $input"."_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out$inputNoPath.rawcnv2";$o=`$c`;#$o=`$c`;
 }
-$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$inputNoPath.rawcnv2 | sort -u -k1,1 -k2,2n -t_ > temp/$out"."map";$o=`$c`;
+$c="awk '{print \$1\"_\"\$2\"\\n\"\$1\"_\"\$3}' temp/$out$inputNoPath.rawcnv2 | sort -u -k1,1 -k2,2n -t_ > temp/$out"."map";#$o=`$c`;
 %h_state=();
 %chr_posIndex=();
 open(MAP,"temp/$out"."map");
