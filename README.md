@@ -10,7 +10,7 @@ perl ParseCNV2.pl -i Cases.rawcnv -c Cases.list -b hg19
 perl ParseCNV2.pl -i Cases.rawcnv -q Cases.qt -m 1 -d 2 -p 1 -b hg19 -batch ID_Category.txt  
 #Specify an array CNV call text file, perform quality control, plink format SNP genotype bed file, PennCNV detect_cnv log, affected samples, and genome build  
 perl ParseCNV2.pl -i Cases.rawcnv -qc -bfile plinkBed -log penncnv.log -c Cases.list2 -b hg19  
-#Specify an array CNV call text file, affected samples, and genome build, covariates file, and statistic as logistic
+#Specify an array CNV call text file, affected samples, and genome build, covariates file, and statistic as logistic  
 perl ParseCNV2.pl -i Cases.rawcnv -c Cases.list -b hg19 -covar SamplesAgeSexRace.txt -stat logistic  
 
 ![SNPArrayGenotypingData](/images/SNPArrayGenotypingData.png)  
