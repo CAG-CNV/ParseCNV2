@@ -104,6 +104,114 @@ if ($noFrequencyFilter) {
 else {
     $FrequencyFilter = "--mac 2 --max-maf 0.01";
 }
+#print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
+#Unzip larger files on github that had to be compressed to allow upload
+if ( !( -e $MyDirectoryPathPrefix . "PerlModules/plink" ) ) {
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/plink.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/plink2.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules";
+    $o = `$c`;
+    $c = "mkdir ".$MyDirectoryPathPrefix."PerlModules/executable;" . "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/rvtest.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/executable";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/vcfToBedpe.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/bcftools.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "PerlModules/tabix.zip -d "
+      . $MyDirectoryPathPrefix
+      . "PerlModules";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "GeneRef/$build"
+      . "_gc5Base_SimFormat_AllCol.sorted.zip -d "
+      . $MyDirectoryPathPrefix
+      . "GeneRef";
+    $o = `$c`;
+    $c =
+        "unzip "
+      . $MyDirectoryPathPrefix
+      . "GeneRef/$build"
+      . "_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d "
+      . $MyDirectoryPathPrefix
+      . "GeneRef";
+    $o = `$c`;
+    if ( -e $MyDirectoryPathPrefix . "GeneRef/$build" . "_knownGene.txt.zip" ) {
+     
+	$c =
+            "unzip "
+          . $MyDirectoryPathPrefix
+          . "GeneRef/*"
+          . "_knownGene.txt.zip -d "
+          . $MyDirectoryPathPrefix
+          . "GeneRef";
+        $o = `$c`;
+        $c =
+            "unzip "
+          . $MyDirectoryPathPrefix
+          . "GeneRef/*"
+          . "_kgXref.txt.zip -d "
+          . $MyDirectoryPathPrefix
+          . "GeneRef";
+        $o = `$c`;
+    }
+}
+
+#Check presence and version of dependencies
+$cmd = "which bash";
+$o   = `$cmd`;
+print LOG "$o";
+if ( $o =~ " no " ) { print "ERROR: bash not found!\n"; }
+$cmd = "which R";
+$o   = `$cmd`;
+print LOG "$o";
+if ( $o =~ " no " ) { print "ERROR: R not found!\n"; }
+$cmd = "which " . $MyDirectoryPathPrefix . "PerlModules/plink";
+$o   = `$cmd`;
+print LOG "$o";
+if ( $o =~ " no " ) { print "ERROR: plink not found!\n"; }
+$cmd = "which " . $MyDirectoryPathPrefix . "PerlModules/plink2";
+$o   = `$cmd`;
+print LOG "$o";
+if ( $o =~ " no " ) { print "ERROR: plink2 not found!\n"; }
+
+#$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
+$c = "free -m | awk '{if(NR==2)printf\$4}'";
+$o = `$c`;
+print $o. " MB RAM Available\n";
+print LOG $o . " MB RAM Available\n";
+if ( -e "plink.sexcheck" ) {
+    $c = "rm plink.sexcheck";
+    $o = `$c`;
+}
 
 #sub function definition to reduce redundancy .txt vs. vcf/rawcnv input on the command line but have to be careful about scope of variables or pass references to variables like penncnv
 #sub parse_vcf_vcfgz
@@ -173,7 +281,7 @@ sub vcf_to_pfile
 	#vcf -> pfile (pgen,pvar,psam)
         $c =
         $MyDirectoryPathPrefix
-      . "PerlModules/./plink2 --vcf $input --make-pgen --out temp/$out"
+      . "PerlModules/./plink2 --vcf $input --make-pgen --allow-extra-chr --out temp/$out"
       . "$inputNoPath.del --extract temp/$out"
       . "$inputNoPath"
       . "_DelSnpsFromVcf";
@@ -181,17 +289,16 @@ sub vcf_to_pfile
     $o = `$c`;    #All Deletion CN=0,1 pgen del file
     $c =
         $MyDirectoryPathPrefix
-      . "PerlModules/./plink2 --vcf $input --make-pgen --out temp/$out"
+      . "PerlModules/./plink2 --vcf $input --make-pgen --allow-extra-chr --out temp/$out"
       . "$inputNoPath.dup --extract temp/$out"
       . "$inputNoPath"
       . "_DupSnpsFromVcf";
     $o = `$c`;    #All Duplication CN>2 pgen dup file
 	$c =
         $MyDirectoryPathPrefix
-      . "PerlModules/./plink2 --vcf $input --make-pgen --out temp/$out"
+      . "PerlModules/./plink2 --vcf $input --make-pgen --allow-extra-chr --out temp/$out"
       . "$inputNoPath";
     $o = `$c`;    #All together pgen deldup file
-
     $c =
     "grep -v ^# temp/$out"
   . "$inputNoPath.pvar | awk -F\"\t\" '{if(\$5~/,/)print\$3}' > temp/$out". "ExcludeMultiallelic";
@@ -199,19 +306,19 @@ $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath --make-bed --out temp/$out"
+  . "$inputNoPath --make-bed --allow-extra-chr --out temp/$out"
   . " --exclude temp/$out". "ExcludeMultiallelic";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath.del --make-bed --out temp/$out"
+  . "$inputNoPath.del --make-bed --allow-extra-chr --out temp/$out"
   . "del --exclude temp/$out". "ExcludeMultiallelic";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath.dup --make-bed --out temp/$out"
+  . "$inputNoPath.dup --make-bed --allow-extra-chr --out temp/$out"
   . "dup --exclude temp/$out". "ExcludeMultiallelic";
 $o = `$c`;
 
@@ -317,9 +424,9 @@ sub extract_info_vcf
     #CHR START(POS) END SNP_ID REF ALT SITEPOST
     $c =
         $cat_zcat
-      . " $input | grep -v ^# | awk '{count=split(\$8,a,/;/);for(i=1;i<=count;i++){if(a[i]~/^END=/){gsub(/END\=/,\"\",a[i]);END_FOUND=1;myEND=a[i];if(myEND==\$2){myEND++}}};for(i=1;i<=count;i++){if(a[i]~/^SITEPOST=/){gsub(/SITEPOST\=/,\"\",a[i]);SITEPOST_FOUND=1;mySITEPOST=a[i]}};for(i=1;i<=count;i++){if(a[i]~/^SVLEN=/){gsub(/SVLEN\=/,\"\",a[i]);SVLEN_FOUND=1;mySVLEN=a[i]}};if(END_FOUND==1){}else if(SVLEN_FOUND==1){myEND=\$2+mySVLEN}else{myEND=\$2+1};print \$1\"\\t\"\$2\"\\t\"myEND\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"mySITEPOST>\"temp/$out"
+      . " $input | grep -v ^## | awk '{if(NR==1){for(j=10;j<=NF;j++){SIDs[j]=\$j}}else{count=split(\$8,a,/;/);for(i=1;i<=count;i++){if(a[i]~/^END=/){gsub(/END\=/,\"\",a[i]);END_FOUND=1;myEND=a[i];if(myEND==\$2){myEND++}}};for(i=1;i<=count;i++){if(a[i]~/^SITEPOST=/){gsub(/SITEPOST\=/,\"\",a[i]);SITEPOST_FOUND=1;mySITEPOST=a[i]}};if(!(mySITEPOST)){mySITEPOST=1;};for(i=1;i<=count;i++){if(a[i]~/^SVLEN=/){gsub(/SVLEN\=/,\"\",a[i]);SVLEN_FOUND=1;mySVLEN=a[i]}};if(END_FOUND==1){}else if(SVLEN_FOUND==1){myEND=\$2+mySVLEN}else{myEND=\$2+1};for(j=10;j<=NF;j++){if(\$j!~/^0\\\/0/){Calls++;SamplesCols_wCalls[Calls]=\$j}};for(k=1;k<=Calls;k++){print \$1\"\\t\"\$2\"\\t\"myEND\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"mySITEPOST\"\\t\"SIDs[SamplesCols_wCalls[k]] > \"temp/$out"
       . "$inputNoPath"
-      . "_wEND_CHR_POS_or_END_SNPID_wENDCol_wSitePostCol.txt\";END_FOUND=0;SVLEN_FOUND=0}'";
+      . "_wEND_CHR_POS_or_END_SNPID_wENDCol_wSitePostCol.txt\"}END_FOUND=0;SVLEN_FOUND=0;Calls=0;delete SamplesCols_wCalls}}'";
     print "$c\n";
     $o = `$c`;
     print "$o\n";
@@ -383,8 +490,8 @@ sub cn_extract
               . $a[1] . "\t"
               . $a[2] . "\t"
               . $cn_forRawcnv2
-              . "\tSID\t"
-              . $_[6] . "\n";
+              . "\t" . $a[7] . "\t"
+              . $a[6] . "\n";
 			  
 			%CN_to_StateCN=(0 => "state1,cn=0", 1 => "state2,cn=1", 2 => "state4,cn=2", 3 => "state5,cn=3", 4 => "state6,cn=4");
 			print OUT_BedpeToRawcnv $a[0] . ":"
@@ -393,10 +500,10 @@ sub cn_extract
 			  . "numsnp=" . ($a[2]-$a[1])/1000 . " "
 			  . "length=" . ($a[2]-$a[1])+1 . " "
               . $CN_to_StateCN{$cn_forRawcnv2}
-              . " SID "  #could try pulling SID from VCF header, plink2 psam
+              . " " . $a[7] . " "  #could try pulling SID from VCF header, plink2 psam
 			  . $a[0] . "_" . $a[1] . " "
 			  . $a[0] . "_" . $a[2] . " "
-              . "conf=" . $_[6] . "\n";
+              . "conf=" . $a[6] . "\n";
 			#chr1:1-3  numsnp=3 length=3  state1,cn=0 1_A.baflrr startsnp=rs1 endsnp=rs3 conf=1
 			
             $CHR_POS                        = $a[0] . "_" . $a[1];
@@ -482,7 +589,7 @@ sub rawcnv_to_vcf
 #Convert rawcnv to vcf to allow same plink stats to be run (since .cnv input not supported in plink1.9 or plink2 yet)
     $c = "gzip -fk temp/$out" . "$inputNoPath.rawcnv 
 sed 's/chr//' temp/$out"
-      . "$inputNoPath.rawcnv | sed 's/:/\t/' | sed 's/-/\t/' | gzip > temp/$out"
+      . "$inputNoPath.rawcnv | sed 's/:/\t/' | sed 's/-/\t/' | sed 's/\ /\t/' | gzip > temp/$out"
       . "$inputNoPath.rawcnv.bed.gz
 RAWCNV_GZ_INPUT=temp/$out" . "$inputNoPath.rawcnv.gz
 RAWCNV_BED_GZ_INPUT=temp/$out" . "$inputNoPath.rawcnv.bed.gz
@@ -493,6 +600,8 @@ if [ \$? == 0 ] ; then zcat \$RAWCNV_BED_GZ_INPUT > temp/$out" . "$inputNoPath.I
 awk '{if(NR==FNR){if(!(_[\$5])){_[\$5]=1}}\
       else{if(FNR==1){printf \"\#\#fileformat=VCFv4.3\\n\#CHROM\\tPOS\\tID\\tREF\\tALT\\tQUAL\\tFILTER\\tINFO\\tFORMAT\";for(key in _){printf \"\\t\"key};print\"\"}\
 CN=substr(\$6,11,length(\$6)-10)+0;\
+if(CN==0){CN=1}\
+if(CN==4){CN=3}\
 if(lastChrPosAlt&&\$1\":\"\$2\":\"CN!=lastChrPosAlt)\
         {printf CHR_POS_9Cols;for(ID in _){ if(!(my_gt[ID])){printf \"\\t0/0:.\"}else{printf \"\\t\"my_gt[ID]}}print\"\";CHR_POS_9Cols=\"\";split(\"\", my_gt)};\
 if(\$10!=\"\"){gsub(/conf=/,\"\",\$10)}else{\$10=\".\"};\
@@ -505,7 +614,7 @@ NegOrPosLen=\"\";\
 gt=\"0/0\"}else{svtype=\"DUP\";\
 NegOrPosLen=\"\";\
 if(CN==3){gt=\"0/1\"}else{gt=\"1/1\"}};\
-if(!(CHR_POS_9Cols)){CHR_POS_9Cols=\$1\"\\t\"\$2\"\\t\"\$1\":\"\$2\"\\tN\\t<CN=\"CN\">\\t.\\tPASS\\tSVTYPE=\"svtype\";END=\"\$3\";LEN=\"NegOrPosLen\$3-\$2+1\"\\tGT:GQ\"};\
+if(!(CHR_POS_9Cols)){CHR_POS_9Cols=\$1\"\\t\"\$2\"\\t\"\$1\":\"\$2\"-\"\$3\"\\tN\\t<CN=\"CN\">\\t.\\tPASS\\tSVTYPE=\"svtype\";END=\"\$3\";LEN=\"NegOrPosLen\$3-\$2+1\"\\tGT:GQ\"};\
 my_gt[\$7]=gt\":\"\$10;\
 lastChrPosAlt=\$1\":\"\$2\":\"CN\
 }\
@@ -554,7 +663,7 @@ if ( $input =~ /\.txt$/ ) {
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
 				$sub_out = cn_extract;
-				$sub_out = make_map_sorted;
+				#$sub_out = make_map_sorted;
 				
 				
 				if ( $input =~ /\.vcf$/ )
@@ -620,7 +729,7 @@ if ( $input =~ /\.vcf$/ || $input =~ /\.vcf\.gz$/ ) {
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
 				$sub_out = cn_extract;
-				$sub_out = make_map_sorted;
+				#$sub_out = make_map_sorted;
 }
 
 elsif ( $input =~ /\.rawcnv$/ ) {
@@ -629,12 +738,13 @@ elsif ( $input =~ /\.rawcnv$/ ) {
 			$sub_out = verify_rawcnv;
 			$sub_out = rawcnv_to_vcf;
 			$cat_zcat = "zcat";
+			$input="temp/$out"."$inputNoPath".".vcf.gz";
 			$sub_out = vcf_extract_del_dup_IDs($input="temp/$out"."$inputNoPath".".vcf.gz");
 			$sub_out = vcf_to_pfile($input="temp/$out"."$inputNoPath".".vcf.gz");
-			$sub_out = pvar_chr_pos_link;
+			$sub_out = pvar_chr_pos_link($input="temp/$out"."$inputNoPath".".vcf.gz");
                         $sub_out = extract_info_vcf($input="temp/$out"."$inputNoPath".".vcf.gz");
-                        $sub_out = cn_extract;
-                        $sub_out = make_map_sorted;
+                        $sub_out = cn_extract($input="temp/$out"."$inputNoPath".".vcf.gz");
+			#$sub_out = make_map_sorted;
 
 }
 
@@ -685,110 +795,6 @@ print LOG "Run Started "
 print $myCommandLine;
 print LOG $myCommandLine;
 
-#print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
-#Unzip larger files on github that had to be compressed to allow upload
-if ( !( -e $MyDirectoryPathPrefix . "PerlModules/plink" ) ) {
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/plink.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/plink2.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules";
-    $o = `$c`;
-    $c = "mkdir ".$MyDirectoryPathPrefix."PerlModules/executable;" . "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/rvtest.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/executable";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/vcfToBedpe.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/bcftools.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "PerlModules/tabix.zip -d "
-      . $MyDirectoryPathPrefix
-      . "PerlModules";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "GeneRef/$build"
-      . "_gc5Base_SimFormat_AllCol.sorted.zip -d "
-      . $MyDirectoryPathPrefix
-      . "GeneRef";
-    $o = `$c`;
-    $c =
-        "unzip "
-      . $MyDirectoryPathPrefix
-      . "GeneRef/$build"
-      . "_knownGene_Exons_SimFormat_AllCol_UniqueIDs.zip -d "
-      . $MyDirectoryPathPrefix
-      . "GeneRef";
-    $o = `$c`;
-    if ( -e $MyDirectoryPathPrefix . "GeneRef/$build" . "_knownGene.txt.zip" ) {
-     
-	$c =
-            "unzip "
-          . $MyDirectoryPathPrefix
-          . "GeneRef/*"
-          . "_knownGene.txt.zip -d "
-          . $MyDirectoryPathPrefix
-          . "GeneRef";
-        $o = `$c`;
-        $c =
-            "unzip "
-          . $MyDirectoryPathPrefix
-          . "GeneRef/*"
-          . "_kgXref.txt.zip -d "
-          . $MyDirectoryPathPrefix
-          . "GeneRef";
-        $o = `$c`;
-    }
-}
-
-#Check presence and version of dependencies
-$cmd = "which bash";
-$o   = `$cmd`;
-print LOG "$o";
-if ( $o =~ " no " ) { print "ERROR: bash not found!\n"; }
-$cmd = "which R";
-$o   = `$cmd`;
-print LOG "$o";
-if ( $o =~ " no " ) { print "ERROR: R not found!\n"; }
-$cmd = "which " . $MyDirectoryPathPrefix . "PerlModules/plink";
-$o   = `$cmd`;
-print LOG "$o";
-if ( $o =~ " no " ) { print "ERROR: plink not found!\n"; }
-
-#$c="awk '/MemAvailable/ {printf \$2/1000}' /proc/meminfo";$o=`$c`;print $o." MB RAM Available\n";print LOG $o." MB RAM Available\n";
-$c = "free -m | awk '{if(NR==2)printf\$4}'";
-$o = `$c`;
-print $o. " MB RAM Available\n";
-print LOG $o . " MB RAM Available\n";
-if ( -e "plink.sexcheck" ) {
-    $c = "rm plink.sexcheck";
-    $o = `$c`;
-}
 #if ($qc) {
 sub run_qc {
     $c = "perl InputUtilities/ParseCNV_QC.pl";
@@ -810,7 +816,7 @@ sub run_qc {
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
 				$sub_out = cn_extract;
-				$sub_out = make_map_sorted;
+				#$sub_out = make_map_sorted;
 				
 				$QC_input_original=$input;
 				$input = "temp/$out" . $inputNoPath . ".rawcnv";
@@ -821,10 +827,10 @@ sub run_qc {
     }
     if ($bfile) {
 		#Could see if these commands work with plink2 to improve runtime
-        $cp=$MyDirectoryPathPrefix."PerlModules/./plink --bfile $bfile --missing";$o=`$cp`;
-        $cp = $MyDirectoryPathPrefix."PerlModules/./plink --bfile $bfile --pca";$o  = `$cp`;
-		$cp=$MyDirectoryPathPrefix."PerlModules/./plink --bfile $bfile --genome --min 0.4";$o=`$cp`;#--min 0.4 to save disk space
-        $cp = $MyDirectoryPathPrefix."PerlModules/./plink --bfile $bfile --check-sex";$o=`$cp`;
+        $cp=$MyDirectoryPathPrefix."PerlModules/./plink --allow-extra-chr --bfile $bfile --missing";$o=`$cp`;
+        $cp = $MyDirectoryPathPrefix."PerlModules/./plink --allow-extra-chr --bfile $bfile --pca";$o  = `$cp`;
+		$cp=$MyDirectoryPathPrefix."PerlModules/./plink --allow-extra-chr --bfile $bfile --genome --min 0.4";$o=`$cp`;#--min 0.4 to save disk space
+        $cp = $MyDirectoryPathPrefix."PerlModules/./plink --allow-extra-chr --bfile $bfile --check-sex";$o=`$cp`;
 		$c.=" --callrate plink.imiss --popstrat plink.eigenvec --related plink.genome";
     }
     print "QC Command=".$c."\n";
@@ -985,21 +991,21 @@ $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath --make-bed --out temp/$out"
+  . "$inputNoPath --make-bed --allow-extra-chr --out temp/$out"
   . " --exclude temp/$out"
   . "ExcludeMultiallelic";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath.del --make-bed --out temp/$out"
+  . "$inputNoPath.del --make-bed --allow-extra-chr --out temp/$out"
   . "del --exclude temp/$out"
   . "ExcludeMultiallelic";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink2 --pfile temp/$out"
-  . "$inputNoPath.dup --make-bed --out temp/$out"
+  . "$inputNoPath.dup --make-bed --allow-extra-chr --out temp/$out"
   . "dup --exclude temp/$out"
   . "ExcludeMultiallelic";
 $o = `$c`;
@@ -1009,6 +1015,8 @@ print $o. "\n";
 $c = "head -1 temp/$out" . "del.fam";
 $o = `$c`;
 print $o. "\n";
+
+=pod
 $c = "mv temp/$out" . "del.bim temp/$out" . "del.bim.bak";
 $o = `$c`;
 $c =
@@ -1032,7 +1040,7 @@ $c =
   . ".bim.bak > temp/$out"
   . ".bim";
 $o = `$c`;
-
+=cut
 #$c="mv temp/$out"."del.bim temp/$out"."del.bim.bak2";$o=`$c`;
 $c = "head -1 temp/$out" . "del.bim";
 $o = `$c`;
@@ -1206,19 +1214,19 @@ $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink --bfile temp/$out"
   . "del --assoc fisher --pheno temp/$out"
-  . "file.pheno --allow-no-sex --out temp/$out" . "del";
+  . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out" . "del";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink --bfile temp/$out"
   . "dup --assoc fisher --pheno temp/$out"
-  . "file.pheno --allow-no-sex --out temp/$out" . "dup";
+  . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out" . "dup";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/./plink --bfile temp/$out"
   . " --assoc fisher --pheno temp/$out"
-  . "file.pheno --allow-no-sex --out temp/$out";
+  . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out";
 $o = `$c`;
 
 #CALCULATE Variant ID based rare recurrent CNV association statistics
@@ -1231,19 +1239,19 @@ if ( $cases ne "" ) {
             $MyDirectoryPathPrefix
           . "PerlModules/./plink --bfile temp/$out"
           . "del --model fisher --pheno temp/$out"
-          . "file.pheno --allow-no-sex --out temp/$out" . "del";
+          . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out" . "del";
         $o = `$c`;
         $c =
             $MyDirectoryPathPrefix
           . "PerlModules/./plink --bfile temp/$out"
           . "dup --model fisher --pheno temp/$out"
-          . "file.pheno --allow-no-sex --out temp/$out" . "dup";
+          . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out" . "dup";
         $o = `$c`;
         $c =
             $MyDirectoryPathPrefix
           . "PerlModules/./plink --bfile temp/$out"
           . " --model fisher --pheno temp/$out"
-          . "file.pheno --allow-no-sex --out temp/$out";
+          . "file.pheno --allow-no-sex --allow-extra-chr $FrequencyFilter --out temp/$out";
         $o = `$c`;
 
         $c =
@@ -1342,21 +1350,21 @@ if ( $cases ne "" ) {
                     $MyDirectoryPathPrefix
                   . "PerlModules/./plink2 --pfile temp/$out"
                   . "$inputNoPath $glm_covar --pheno temp/$out"
-                  . "file.pheno --adjust $FrequencyFilter --out temp/$out"
+                  . "file.pheno --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
                   . "GLM_wCovar";
                 $o = `$c`;
                 $c =
                     $MyDirectoryPathPrefix
                   . "PerlModules/./plink2 --pfile temp/$out"
                   . "$inputNoPath.del $glm_covar --pheno temp/$out"
-                  . "file.pheno --adjust $FrequencyFilter --out temp/$out"
+                  . "file.pheno --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
                   . "GLM_wCovar.del";
                 $o = `$c`;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
                 $c =
                     $MyDirectoryPathPrefix
                   . "PerlModules/./plink2 --pfile temp/$out"
                   . "$inputNoPath.dup $glm_covar --pheno temp/$out"
-                  . "file.pheno --adjust $FrequencyFilter --out temp/$out"
+                  . "file.pheno --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
                   . "GLM_wCovar.dup";
                 $o = `$c`;
             }
@@ -1685,7 +1693,7 @@ if ( $quantitativeTrait ne "" ) {
     $c =
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
-      . "del --assoc --pheno $quantitativeTrait --allow-no-sex --out temp/$out"
+      . "del --assoc --pheno $quantitativeTrait --allow-no-sex --allow-extra-chr --out temp/$out"
       . "del";
     if ( $covar ne "" ) { $c = $c . " --covar $covar"; }
     ;
@@ -1693,7 +1701,7 @@ if ( $quantitativeTrait ne "" ) {
     $c =
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
-      . "dup --assoc --pheno $quantitativeTrait --allow-no-sex --out temp/$out"
+      . "dup --assoc --pheno $quantitativeTrait --allow-no-sex --allow-extra-chr --out temp/$out"
       . "dup";
     if ( $covar ne "" ) { $c = $c . " --covar $covar"; }
     ;
@@ -1701,7 +1709,7 @@ if ( $quantitativeTrait ne "" ) {
     $c =
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
-      . " --assoc --pheno $quantitativeTrait --allow-no-sex --out temp/$out";
+      . " --assoc --pheno $quantitativeTrait --allow-no-sex --allow-extra-chr --out temp/$out";
     if ( $covar ne "" ) { $c = $c . " --covar $covar"; }
     ;
     $o = `$c`;
@@ -1718,20 +1726,20 @@ if ( $quantitativeTrait ne "" ) {
         $c =
             $MyDirectoryPathPrefix
           . "PerlModules/./plink2 --pfile temp/$out"
-          . "$inputNoPath $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --out temp/$out"
+          . "$inputNoPath $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
           . "GLM_wCovar";
         $o = `$c`;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
 	##TO DO: Extract AffectedTrait text from .pheno or output .logistic.hybrid
         $c =
             $MyDirectoryPathPrefix
           . "PerlModules/./plink2 --pfile temp/$out"
-          . "$inputNoPath.del $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --out temp/$out"
+          . "$inputNoPath.del $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
           . "GLM_wCovar.del";
         $o = `$c`;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
         $c =
             $MyDirectoryPathPrefix
           . "PerlModules/./plink2 --pfile temp/$out"
-          . "$inputNoPath.dup $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --out temp/$out"
+          . "$inputNoPath.dup $glm_covar --pheno $quantitativeTrait --adjust $FrequencyFilter --allow-extra-chr --out temp/$out"
           . "GLM_wCovar.dup";
         $o = `$c`;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
     
@@ -1747,19 +1755,19 @@ if ( $tdt ) {
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
       . "del --tdt --pheno temp/$out"
-      . "file.pheno --allow-no-sex --out temp/$out" . "del";
+      . "file.pheno --allow-no-sex --allow-extra-chr --out temp/$out" . "del";
     $o = `$c`;
     $c =
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
       . "dup --tdt --pheno temp/$out"
-      . "file.pheno --allow-no-sex --out temp/$out" . "dup";
+      . "file.pheno --allow-no-sex --allow-extra-chr --out temp/$out" . "dup";
     $o = `$c`;
     $c =
         $MyDirectoryPathPrefix
       . "PerlModules/./plink --bfile temp/$out"
       . " --tdt --pheno temp/$out"
-      . "file.pheno --allow-no-sex --out temp/$out";
+      . "file.pheno --allow-no-sex --allow-extra-chr --out temp/$out";
     $o = `$c`;
 
 #--tdt normally computes parenTDT, transmission disequilibrium test, and combined test statistics, writing results to plink.tdt.
@@ -2453,9 +2461,10 @@ while (<CHR_POS_or_END_SNP>) {
     chomp;
     @a                                = split( /\t/, $_ );
     $myCHR_POS                        = $a[0] . "_" . $a[1];
-    $CHR_POS_to_VarID_vcf{$myCHR_POS} = $a[3];
-    $PlinkCHR_POS_to_REF{$myCHR_POS}  = $a[4];
-    $PlinkCHR_POS_to_ALT{$myCHR_POS}  = $a[5];
+    $myCHR_POS_END                    = $a[0] . "_" . $a[1] . "_" . $a[2];;
+    $CHR_POS_to_VarID_vcf{$myCHR_POS_END} = $a[3];
+    $PlinkCHR_POS_to_REF{$myCHR_POS_END}  = $a[4];
+    $PlinkCHR_POS_to_ALT{$myCHR_POS_END}  = $a[5];
 }
 close(CHR_POS_or_END_SNP);
 print "test_CHR_POS_to_VarID_pvar="
@@ -2465,16 +2474,17 @@ print "test_CHR_POS_or_END_SNP=" . "$test_CHR_POS_to_VarID_pvar\t$VCF_VarID\n";
 
 while ( $line = <REPORT> ) {
     chomp($line);
-    @a = split( /\s+/, $line );
+    @a = split( /\t/, $line );
+    print "Here is array a contents initially @a\n";
 
     #print "$a[5]\n";
     #Could switch out bed for pgen but plink2 may not have recode
     #Update plink2 has --export ped
     #temp/$out"."$inputNoPath
-    $CHR_POS_ID = $a[5];
+    $CHR_POS_ID = $a[5]; # . "_" . $a[2];
     "$CHR_POS_ID";    # stringified
                       #$VCF_VarID=$PlinkCHR_POS_to_VarID_pvar{$CHR_POS_ID};
-    $CHR_POS_ID =~ s/:/_/;
+    $CHR_POS_ID =~ s/:|-/_/g;
     $VCF_VarID = $CHR_POS_to_VarID_vcf{$CHR_POS_ID};
 
 #if($VCF_VarID) may need to add back in case of any variant exclusion
@@ -2482,7 +2492,8 @@ while ( $line = <REPORT> ) {
 #Error: .pgen file contains multiallelic variants, while .pvar does not.
 #$c="awk -F\"\\t\" 'BEGIN{OFS=\"\\t\"}{gsub(/,.*/,\"\",\$5);print \$0}' temp/$out"."$inputNoPath".".pvar > temp/$out"."$inputNoPath".".pvar2; cp temp/$out"."$inputNoPath".".pvar temp/$out"."$inputNoPath".".pvar.bak; mv temp/$out"."$inputNoPath".".pvar2 temp/$out"."$inputNoPath".".pvar";$o=`$c`;
     print "CHR_POS_ID=" . $CHR_POS_ID . " VCF_VarID=" . $VCF_VarID . "\n";
-    $myChrPos = $a[0] . "_" . $a[1];
+    $myChrPos = $a[5]; #$a[0] . "_" . $a[1];
+    $myChrPos =~ s/:|-/_/g;
     if ( $PlinkCHR_POS_to_ALT{$myChrPos} =~ /,/ ) {
 	    #temp/1KG_SudmantEtAl_wRvTestsVcfHeader_and_multiallelic 
 	    #$c=$cat_zcat . " " . $input . " | grep ^#CHROM > temp/$out" . "VcfHeader_and_multiallelic;" . $cat_zcat . " " . $input . " | grep -P \"$a[0]\\t$a[1]\\t\" >> temp/$out" . "VcfHeader_and_multiallelic";
@@ -2503,16 +2514,18 @@ while ( $line = <REPORT> ) {
 	}
 	else{	
     $c =
-        "echo $CHR_POS_ID > temp/$out"
+        "echo $VCF_VarID > temp/$out"
       . "TagSnp; $MyDirectoryPathPrefix"
       . "PerlModules/./plink2 --pfile temp/$out"
       . "$inputNoPath --snp $VCF_VarID --export ped --pheno temp/$out"
-      . "file.pheno --allow-no-sex --out temp/$out"
+      . "file.pheno --allow-no-sex --allow-extra-chr --out temp/$out"
       . "TagSnp";
     $o = `$c`;
 
 #$c="echo $a[5] > temp/$out"."TagSnp; $MyDirectoryPathPrefix"."PerlModules/./plink2 --bfile temp/$out$a[8] --extract temp/$out"."TagSnp --export ped --allow-no-sex --out temp/$out"."TagSnp";$o=`$c`;#print "$c\n$o\n";
-    $myChrPos = $a[0] . "_" . $a[1];
+    $myChrPos = $a[5]; #$a[0] . "_" . $a[1];
+    $myChrPos_ = $a[5];
+    $myChrPos =~ s/:|-/_/g;
     $myREF    = $PlinkCHR_POS_to_REF{$myChrPos};
     print "\$myREF= " . $myREF . "\n";
     $c = "grep -vP \"$myREF\\t$myREF\$\" temp/$out"
@@ -2530,11 +2543,20 @@ while ( $line = <REPORT> ) {
    }
     if ( $Cases == 0 )    { $CasesSIDs   = "NA"; }
     if ( $Controls == 0 ) { $ControlSIDs = "NA"; }
-    print REPORT2 "$line\t$Cases\t$Controls\t$CaseSIDs\t$ControlSIDs\n";
+    @chr_pos_end = split( /_/, $myChrPos );
+    print "Here is array a contents before print @a\n";
+    #Here is array a contents initially 17 9724255 9724255 0.03418 0.1348 17:9724255-9725522 0.03418 control del
+    #Here is array a contents before print 17 9724255 9724255 0.03418 0.1348 17:9724255-9725522 0.03418 control del
+    @chr_pos_end = split( /_/, $CHR_POS_ID );
+    print "Here is array chr_pos_end contents before print @chr_pos_end\n";
+    if($a[4]=="NA"){$a[4]="infinity"};
+    if($a[4]=="0"){$a[4]="-infinity"};
+	print REPORT2 "$chr_pos_end[0]\t$chr_pos_end[1]\t$chr_pos_end[2]\t$a[3]\t$a[4]\t$a[5]\t$a[6]\t$a[7]\t$a[8]\t$Cases\t$Controls\t$CaseSIDs\t$ControlSIDs\n";
 
     #exit; #TESTING
-    print ChrPosRanges "$a[0]:$a[1]-$a[2]\n";
+    print ChrPosRanges "chr".$a[5]."\n"; #"$myChrPos\n"; #"$a[0]:$a[1]-$a[2]\n";
 }
+close(ChrPosRanges);
 $c = "perl "
   . $MyDirectoryPathPrefix
   . "PerlModules/scan_region.pl temp/$out"
