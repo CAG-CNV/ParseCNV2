@@ -1,5 +1,9 @@
 # ParseCNV2: CNV GWAS Tool
 Parse Copy Number Variation from Array and Sequencing  
+
+Cite: Glessner JT, Li J, Liu Y, Khan M, Chang X, Sleiman PMA, Hakonarson H. ParseCNV2: efficient sequencing tool for copy number variation genome-wide association studies. Eur J Hum Genet. 2022 Nov 1. doi: 10.1038/s41431-022-01222-7. Epub ahead of print. PMID: 36316489.  
+Original: Glessner JT, Li J, Hakonarson H. ParseCNV integrative copy number variation association software with quality tracking. Nucleic Acids Res. 2013 Mar 1;41(5):e64. doi: 10.1093/nar/gks1346. Epub 2013 Jan 4. PMID: 23293001; PMCID: PMC3597648.  
+
 #Make sure compiles and Print Usage Message  
 perl ParseCNV2.pl  
 #Specify a sequencing CNV call VCF, affected samples, and genome build  
