@@ -53,7 +53,7 @@ for ( $i = 0 ; $i <= $#ARGV ; $i++ ) {
 $myCommandLine .= "\n";
 
 $MyDirectoryPathPrefix = $_;
-print "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
+print LOG "MyDirectoryPathPrefix: $MyDirectoryPathPrefix\n";
 use lib './PerlModules';
 
 #use lib $MyDirectoryPathPrefix;
@@ -79,7 +79,7 @@ GetOptions(
     'stat=s'  => \$statistic,
     'no_freq' => \$noFrequencyFilter
 );
-print "statistic=".$statistic."\n";
+print LOG "statistic=".$statistic."\n";
 BEGIN { ( $_ = $0 ) =~ s{[^\\\/]+$}{}; $_ ||= "./" } ##In case running elsewhere
 $MyDirectoryPathPrefix = $_;
 
@@ -263,9 +263,9 @@ sub vcf_extract_del_dup_IDs
       . "$inputNoPath"
       . "_del.vcf\";print > \"temp/$out"
       . "$inputNoPath"
-      . "_dup.vcf\"}else{print}}' | awk 'BEGIN{IGNORE_CASE=1}{ALT=\$5;ALT_copy=\$5;count_del_matches=gsub(\/DEL|0|1\/, \"\",ALT); count_dip_matches=gsub(\/2\/, \"\",ALT_copy); if(length(count_dip_matches)>0 ){count_dip_matches_total++}; if( length(count_del_matches)>0 && count_del_matches>0 ){print \$3 > \"temp/$out"
+      . "_dup.vcf\"}else{print}}' | awk 'BEGIN{IGNORE_CASE=1;OFS=\"\\t\"}{ALT=\$5;ALT_copy=\$5;count_del_matches=gsub(\/DEL|0|1\/, \"\",ALT); count_dip_matches=gsub(\/2\/, \"\",ALT_copy); if(length(count_dip_matches)>0 ){count_dip_matches_total++}; count=split(\$8,a,/;/);for(i=1;i<=count;i++){if(a[i]~/^END=/){gsub(/END\=/,\"\",a[i]);END_FOUND=1;myEND=a[i];if(myEND==\$2){myEND++}}};for(i=1;i<=count;i++){if(a[i]~/^SVLEN=/){gsub(/SVLEN\=/,\"\",a[i]);SVLEN_FOUND=1;mySVLEN=a[i]}};if(END_FOUND==1){}else if(SVLEN_FOUND==1){myEND=\$2+mySVLEN}else{myEND=\$2+1};   if( length(count_del_matches)>0 && count_del_matches>0 ){NewUniqueVarID=\$1\"\:\"\$2\"\-\"\myEND\"\-DEL\"; \$3=NewUniqueVarID; print NewUniqueVarID > \"temp/$out"
       . "$inputNoPath"
-      . "_DelSnpsFromVcf\";dels++;print >> \"temp/$out"
+      . "_DelSnpsFromVcf\";dels++; print >> \"temp/$out"
       . "$inputNoPath"
       . "_del.vcf\"}else{print \$3 > \"temp/$out"
       . "$inputNoPath"
@@ -273,8 +273,8 @@ sub vcf_extract_del_dup_IDs
       . "$inputNoPath"
       . "_dup.vcf\"}}END{print \"dels=\"dels,\"dups=\"dups}'";
     $o = `$c`;
-    print "c=" . $c . "\n";
-    print $o. "\n";
+    print LOG "c=" . $c . "\n";
+    print LOG $o. "\n";
 }
 sub vcf_to_pfile
 {
@@ -285,7 +285,7 @@ sub vcf_to_pfile
       . "$inputNoPath.del --extract temp/$out"
       . "$inputNoPath"
       . "_DelSnpsFromVcf";
-      print "Running $c\n";
+      #print "Running $c\n";
     $o = `$c`;    #All Deletion CN=0,1 pgen del file
     $c =
         $MyDirectoryPathPrefix
@@ -335,25 +335,26 @@ sub pvar_chr_pos_link
 	#CHR_POS -> REF
 	#CHR_POS -> ALT
 	#CHR_POS -> ALTtwo (Only the first ALT if comma separated list (multiallelic)
-	my %PlinkVarID_to_CHR_POS_pvar;
-    my %PlinkCHR_POS_to_VarID_pvar;
-    my %PlinkCHR_POS_to_REF;
-    my %PlinkCHR_POS_to_ALT;
-    my %PlinkCHR_POS_to_ALTtwo;
+	my %PlinkVarID_to_CHR_POS_END_TYPE_pvar;
+    my %PlinkCHR_POS_END_TYPE_to_VarID_pvar;
+    my %PlinkCHR_POS_END_TYPE_to_REF;
+    my %PlinkCHR_POS_END_TYPE_to_ALT;
+    my %PlinkCHR_POS_END_TYPE_to_ALTtwo;
     $myPvar = "temp/$out" . "$inputNoPath" . ".pvar";
     open( my $input_pvar, "<$myPvar" ) or die "cannot open $myPvar: $!\n";
     while ( my $line_pvar = <$input_pvar> ) {
         chomp($line_pvar);
         if ( !( $line_pvar =~ /^\#/ ) ) {
             my @vals = split( /\t/, $line_pvar );
-            $PlinkVarID_to_CHR_POS_pvar{ $vals[2] } = $vals[0] . "_" . $vals[1];
-            $ChrPos                                 = $vals[0] . "_" . $vals[1];
-            $PlinkVarID_to_CHR_POS_pvar{ $vals[2] } = $ChrPos;
-            $PlinkCHR_POS_to_VarID_pvar{$ChrPos}    = $vals[2];
-            $PlinkCHR_POS_to_REF{$ChrPos}           = $vals[3];
-            $PlinkCHR_POS_to_ALT{$ChrPos}           = $vals[4];
+			my @chr_pos_end_type = split( /:|-/, $vals[2] );
+            $PlinkVarID_to_CHR_POS_END_TYPE_pvar{ $vals[2] } = $chr_pos_end_type[0] . "_" . $chr_pos_end_type[1] . "_" . $chr_pos_end_type[2] . "_" . $chr_pos_end_type[3]; # $PlinkVarID_to_CHR_POS_pvar
+            $ChrPosEndType                          = $chr_pos_end_type[0] . "_" . $chr_pos_end_type[1] . "_" . $chr_pos_end_type[2] . "_" . $chr_pos_end_type[3];#$ChrPos 
+            $PlinkVarID_to_CHR_POS_pvar{ $vals[2] } = $ChrPosEndType;
+            $PlinkCHR_POS_END_TYPE_to_VarID_pvar{$ChrPosEndType}    = $vals[2]; # $PlinkCHR_POS_to_VarID_pvar
+            $PlinkCHR_POS_END_TYPE_to_REF{$ChrPosEndType}           = $vals[3];#$PlinkCHR_POS_to_REF
+            $PlinkCHR_POS_END_TYPE_to_ALT{$ChrPosEndType}           = $vals[4];#$PlinkCHR_POS_to_ALT
             if ( $vals[4] =~ /,/ ) { $vals[4] =~ s/,*//; }
-            $PlinkCHR_POS_to_ALTtwo{$ChrPos} = $vals[4];
+            $PlinkCHR_POS_END_TYPE_to_ALTtwo{$ChrPosEndType} = $vals[4];#$PlinkCHR_POS_to_ALTtwo
         }
     }
     close($input_pvar);
@@ -377,7 +378,7 @@ sub vcf_to_bedpe
       . " $input | grep -v ^# | grep \"END=\" > temp/$out"
       . "$inputNoPath" . "_wEND";
     $o = `$c`;
-    print "$o\n";
+    print LOG "$o\n";
 
 #;END= and ;SVLEN= would be more specific matching but miss if it was the first entry
 #1       947113  UW_VH_22703     G       <CN0>   100     PASS    SVTYPE=DEL;CIEND=0,82;CIPOS=-179,0;END=948003;CS=DEL_union;MC=BI_GS_DEL1_B5_P0001_156;AC=4;AF=0.00079872;NS=2504;AN=5008;EAS_AF=0.0;EUR_AF=0.0;AFR_AF=0.003;AMR_AF=0.0;SAS_AF=0.0 GT      0|0
@@ -410,8 +411,8 @@ sub vcf_to_bedpe
         $PlinkVarID_to_CHR_POS_vcfToBedpe{ $_[6] } =
           $_[1] . "_" . $rounded_start_pos;
 
-        print OUT_BedpeToMap $_[0] . "_" . $rounded_start_pos . "\n";
-        print OUT_BedpeToMap $_[0] . "_" . $rounded_end_pos . "\n";
+        print LOG OUT_BedpeToMap $_[0] . "_" . $rounded_start_pos . "\n";
+        print LOG OUT_BedpeToMap $_[0] . "_" . $rounded_end_pos . "\n";
     }
     close(OUT_BedpeToRawcnv2);
     close(OUT_BedpeToMap);
@@ -421,15 +422,15 @@ sub extract_info_vcf
 {
 	#Idea: awk tab info then split by ;
 	#Using all variants here, not just those with an "END=" value
-    #CHR START(POS) END SNP_ID REF ALT SITEPOST
+    #CHR START(POS) END SNP_ID REF ALT SITEPOST <SID>
     $c =
         $cat_zcat
-      . " $input | grep -v ^## | awk '{if(NR==1){for(j=10;j<=NF;j++){SIDs[j]=\$j}}else{count=split(\$8,a,/;/);for(i=1;i<=count;i++){if(a[i]~/^END=/){gsub(/END\=/,\"\",a[i]);END_FOUND=1;myEND=a[i];if(myEND==\$2){myEND++}}};for(i=1;i<=count;i++){if(a[i]~/^SITEPOST=/){gsub(/SITEPOST\=/,\"\",a[i]);SITEPOST_FOUND=1;mySITEPOST=a[i]}};if(!(mySITEPOST)){mySITEPOST=1;};for(i=1;i<=count;i++){if(a[i]~/^SVLEN=/){gsub(/SVLEN\=/,\"\",a[i]);SVLEN_FOUND=1;mySVLEN=a[i]}};if(END_FOUND==1){}else if(SVLEN_FOUND==1){myEND=\$2+mySVLEN}else{myEND=\$2+1};for(j=10;j<=NF;j++){if(\$j!~/^0\\\/0/){Calls++;SamplesCols_wCalls[Calls]=\$j}};for(k=1;k<=Calls;k++){print \$1\"\\t\"\$2\"\\t\"myEND\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"mySITEPOST\"\\t\"SIDs[SamplesCols_wCalls[k]] > \"temp/$out"
+      . " $input | grep -v ^## | awk '{if(NR==1){for(j=10;j<=NF;j++){SIDs[j]=\$j}}else{count=split(\$8,a,/;/);for(i=1;i<=count;i++){if(a[i]~/^END=/){gsub(/END\=/,\"\",a[i]);END_FOUND=1;myEND=a[i];if(myEND==\$2){myEND++}}};for(i=1;i<=count;i++){if(a[i]~/^SITEPOST=/){gsub(/SITEPOST\=/,\"\",a[i]);SITEPOST_FOUND=1;mySITEPOST=a[i]}};if(!(mySITEPOST)){mySITEPOST=1;};for(i=1;i<=count;i++){if(a[i]~/^SVLEN=/){gsub(/SVLEN\=/,\"\",a[i]);SVLEN_FOUND=1;mySVLEN=a[i]}};if(END_FOUND==1){}else if(SVLEN_FOUND==1){myEND=\$2+mySVLEN}else{myEND=\$2+1};for(j=10;j<=NF;j++){if(\$j!~/^0\\\/0/){Calls++;SamplesCols_wCalls[Calls]=j}};for(k=1;k<=Calls;k++){print \$1\"\\t\"\$2\"\\t\"myEND\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"mySITEPOST\"\\t\"SIDs[SamplesCols_wCalls[k]] > \"temp/$out"
       . "$inputNoPath"
       . "_wEND_CHR_POS_or_END_SNPID_wENDCol_wSitePostCol.txt\"}END_FOUND=0;SVLEN_FOUND=0;Calls=0;delete SamplesCols_wCalls}}'";
-    print "$c\n";
+    print LOG "$c\n";
     $o = `$c`;
-    print "$o\n";
+    print LOG "$o\n";
 }
 
 sub cn_extract
@@ -441,7 +442,7 @@ sub cn_extract
           . "$inputNoPath"
           . "_wEND_CHR_POS_or_END_SNPID_wENDCol_wSitePostCol.txt" );
 
-    #CHR START(POS) END SNP_ID REF ALT SITEPOST
+    #CHR START(POS) END SNP_ID REF ALT SITEPOST <SID>
     open( OUT_BedpeToRawcnv2, ">temp/$out" . "$inputNoPath" . ".rawcnv2" );
 	open( OUT_BedpeToRawcnv, ">temp/$out" . "$inputNoPath" . ".rawcnv" );
     open( OUT_DEL_VarIDs,
@@ -480,10 +481,10 @@ sub cn_extract
         if ( $cn_forRawcnv2 == -1 ) {
             my $numberGt4 = () = $myALT =~ /\d+/gi;
             if ( $number4 > 0 ) { $cn_forRawcnv2 = 4; }
-        }
+        
         if   ( length($myREF) > length($myALT) ) { $cn_forRawcnv2 = 1; }
         else                                     { $cn_forRawcnv2 = 3; }
-
+		}
 		#Output rawcnv2 as well for compatibility until transition to vcf stablized
         if ( $cn_forRawcnv2 > -1 ) {
             print OUT_BedpeToRawcnv2 $a[0] . "\t"
@@ -523,13 +524,13 @@ sub cn_extract
     close(NoCNmatchedOUT);
     close(OUT_DEL_VarIDs);
     close(OUT_DUP_VarIDs);
-    print
+    print LOG 
 "$NoCNmatched variants listed in NoCNmatched.out had no CN matched out of (DEL,0,1) or (DUP,2,3,4,\>4) so will be excluded.\n";
     $c =
 "$cat_zcat $input | grep -v ^\# | awk '{if(\$5~/,/)numMultAlts++}END{printf numMultAlts+0}'";
     $o                        = `$c`;
     $numberMultipleALTs_total = $o;
-    print
+    print LOG 
 "$numberMultipleALTs_total variants have multiple ALT values called Multiallelic CNV (both del and dup observed) so these will have multiple association out lines\n";
     close(OUT_BedpeToMap);
 }
@@ -575,7 +576,7 @@ m/^(?:chr)?(\w+):(\d+)-(\d+)\s+numsnp=(\d+)\s+length=(\S+)\s+state(\d),cn=(\d)\s
         }
     }
     $skipped_line
-      and print
+      and print LOG 
 "WARNING: $skipped_line lines were skipped due to unrecognizable formats as listed in temp/$out"
       . "$inputNoPath.badcnv\n";
     close(RAWCNVCLEANFILE);
@@ -587,7 +588,7 @@ sub rawcnv_to_vcf
 #Now rawcnv -> vcf -> plink2 pgen and vcf -> plink2 pgen for faster computation, more statistical/filtering methods and vcf is very popular now
 #$c="awk '{print \$1\"\\t\"\$4\"\\t\"\$5\"\\t\"\$8}' temp/$out"."$inputNoPath.rawcnv | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sed 's/\\tconf=/\\t/' | sort -k5,5 > temp/$out"."$inputNoPath.rawcnv2";$o=`$c`;
 #Convert rawcnv to vcf to allow same plink stats to be run (since .cnv input not supported in plink1.9 or plink2 yet)
-    $c = "gzip -fk temp/$out" . "$inputNoPath.rawcnv 
+    $c = "gzip -f < temp/$out" . "$inputNoPath.rawcnv > temp/$out" . "$inputNoPath.rawcnv.gz 
 sed 's/chr//' temp/$out"
       . "$inputNoPath.rawcnv | sed 's/:/\t/' | sed 's/-/\t/' | sed 's/\ /\t/' | gzip > temp/$out"
       . "$inputNoPath.rawcnv.bed.gz
@@ -595,14 +596,15 @@ RAWCNV_GZ_INPUT=temp/$out" . "$inputNoPath.rawcnv.gz
 RAWCNV_BED_GZ_INPUT=temp/$out" . "$inputNoPath.rawcnv.bed.gz
 zcat \$RAWCNV_GZ_INPUT > temp/$out" . "$inputNoPath.Input1;
 zcat \$RAWCNV_BED_GZ_INPUT > \$RAWCNV_BED_GZ_INPUT.txt;
-sort -C -k1,1 -k2,2n \$RAWCNV_BED_GZ_INPUT.txt;
-if [ \$? == 0 ] ; then zcat \$RAWCNV_BED_GZ_INPUT > temp/$out" . "$inputNoPath.Input2; else sort -k1,1 -k2,2n -T temp \$RAWCNV_BED_GZ_INPUT.txt > temp/$out" . "$inputNoPath.Input2; fi;
-awk '{if(NR==FNR){if(!(_[\$5])){_[\$5]=1}}\
+sort -C -k1,1 -k2,2n -k3,3n -k6,6 \$RAWCNV_BED_GZ_INPUT.txt;
+if [ \$? == 0 ] ; then zcat \$RAWCNV_BED_GZ_INPUT > temp/$out" . "$inputNoPath.Input2; else sort -k1,1 -k2,2n -k3,3n -k6,6 -T temp \$RAWCNV_BED_GZ_INPUT.txt > temp/$out" . "$inputNoPath.Input2; fi;
+awk '{CN=substr(\$6,11,length(\$6)-10)+0;\
+if(CN+0==0){CN=1}\
+if(CN+0==4){CN=3}\
+VarID=\$1\":\"\$2\"-\"\$3\"-\"CN; if(NR==FNR){if(!(_[\$5])){_[\$5]=1}}\
       else{if(FNR==1){printf \"\#\#fileformat=VCFv4.3\\n\#CHROM\\tPOS\\tID\\tREF\\tALT\\tQUAL\\tFILTER\\tINFO\\tFORMAT\";for(key in _){printf \"\\t\"key};print\"\"}\
-CN=substr(\$6,11,length(\$6)-10)+0;\
-if(CN==0){CN=1}\
-if(CN==4){CN=3}\
-if(lastChrPosAlt&&\$1\":\"\$2\":\"CN!=lastChrPosAlt)\
+
+if(lastChrPosAlt&&VarID!=lastChrPosAlt)\
         {printf CHR_POS_9Cols;for(ID in _){ if(!(my_gt[ID])){printf \"\\t0/0:.\"}else{printf \"\\t\"my_gt[ID]}}print\"\";CHR_POS_9Cols=\"\";split(\"\", my_gt)};\
 if(\$10!=\"\"){gsub(/conf=/,\"\",\$10)}else{\$10=\".\"};\
 if(CN==0){svtype=\"DEL\";\
@@ -614,13 +616,13 @@ NegOrPosLen=\"\";\
 gt=\"0/0\"}else{svtype=\"DUP\";\
 NegOrPosLen=\"\";\
 if(CN==3){gt=\"0/1\"}else{gt=\"1/1\"}};\
-if(!(CHR_POS_9Cols)){CHR_POS_9Cols=\$1\"\\t\"\$2\"\\t\"\$1\":\"\$2\"-\"\$3\"\\tN\\t<CN=\"CN\">\\t.\\tPASS\\tSVTYPE=\"svtype\";END=\"\$3\";LEN=\"NegOrPosLen\$3-\$2+1\"\\tGT:GQ\"};\
+if(!(CHR_POS_9Cols)){CHR_POS_9Cols=\$1\"\\t\"\$2\"\\t\"\$1\":\"\$2\"-\"\$3\"-\"svtype\"\\tN\\t<CN=\"CN\">\\t.\\tPASS\\tSVTYPE=\"svtype\";END=\"\$3\";LEN=\"NegOrPosLen\$3-\$2+1\"\\tGT:GQ\"};\
 my_gt[\$7]=gt\":\"\$10;\
-lastChrPosAlt=\$1\":\"\$2\":\"CN\
+lastChrPosAlt=VarID
 }\
 }END{printf CHR_POS_9Cols;for(ID in _){ if(!(my_gt[ID])){printf \"\\t0/0:.\"}else{printf \"\\t\"my_gt[ID]}}print\"\"}' temp/$out"."$inputNoPath.Input1 temp/$out"."$inputNoPath.Input2 > temp/$out" . "$inputNoPath.vcf; gzip -f temp/$out" . "$inputNoPath.vcf";
 #<(zcat \$RAWCNV_GZ_INPUT) <(sort -C -k1,1 -k2,2n <(awk '{print \$1\"\\t\"\$2}' <(zcat \$RAWCNV_BED_GZ_INPUT)); if [ \$? == 0 ] ; then zcat \$RAWCNV_BED_GZ_INPUT; else mkdir temp; sort -k1,1 -k2,2n -T temp <(zcat \$RAWCNV_BED_GZ_INPUT); fi) | gzip > \$RAWCNV_BED_GZ_INPUT.vcf.gz";
-print "Running $c";$o=`$c`;#print $o."\n";
+print LOG "Running $c";$o=`$c`;print LOG $o."\n";
 #$o=`which mv`;print "which mv=".$o."\n";
 
 $c = "zcat temp/$out" . "$inputNoPath.vcf.gz | grep ^#CHROM | head -1 | cut -f 10- | sed 's/\\t/\\n/g' > temp/$out"
@@ -656,9 +658,9 @@ if ( $input =~ /\.txt$/ ) {
 						$cat_zcat = "cat";
 					}
 				$sub_out = vcf_check_build($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_extract_del_dup_IDs($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_to_pfile($input);
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
@@ -689,7 +691,7 @@ if ( $input =~ /\.txt$/ ) {
 		#Now inputs are all converted to vcf since that is now a popular standard format and allows interaction with more tools moving forward
 		
 		#Checking lines match the rawcnv format since users may open rawcnv in excel to edit and don't delimit it properly by only spaces
-            print "IN RAWCNV PARSING CODE\n";
+            print LOG "IN RAWCNV PARSING CODE\n";
 	    if ($qc) {
 		$sub_out = run_qc;
 	    }
@@ -707,7 +709,7 @@ if ( $input =~ /\.txt$/ ) {
     }
 	
 	#Combine all files in the list file input converted to vcf
-	$c=$MyDirectoryPathPrefix . "PerlModules/" . "bcftools merge -l temp/$out" . $inputNoPath . "MergeVcfList.txt -Oz -o temp/$out" . $inputNoPath . "merge.vcf.gz";$o=`$c`;print "$o\n";
+	$c=$MyDirectoryPathPrefix . "PerlModules/" . "bcftools merge -l temp/$out" . $inputNoPath . "MergeVcfList.txt -Oz -o temp/$out" . $inputNoPath . "merge.vcf.gz";$o=`$c`;print LOG "$o\n";
 	$input = "temp/$out" . $inputNoPath . "merge.vcf.gz";
 	##Just let the list file merged vcf run through the input command line being vcf
 }
@@ -722,9 +724,9 @@ if ( $input =~ /\.vcf$/ || $input =~ /\.vcf\.gz$/ ) {
         $cat_zcat = "cat";
     }
 				$sub_out = vcf_check_build($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_extract_del_dup_IDs($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_to_pfile($input);
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
@@ -734,7 +736,7 @@ if ( $input =~ /\.vcf$/ || $input =~ /\.vcf\.gz$/ ) {
 
 elsif ( $input =~ /\.rawcnv$/ ) {
 		$original_input = $input;	
-	        print "IN RAWCNV PARSING CODE\n";
+	        print LOG "IN RAWCNV PARSING CODE\n";
 			$sub_out = verify_rawcnv;
 			$sub_out = rawcnv_to_vcf;
 			$cat_zcat = "zcat";
@@ -799,7 +801,7 @@ print LOG $myCommandLine;
 sub run_qc {
     $c = "perl InputUtilities/ParseCNV_QC.pl";
     if ( $original_input =~ /.rawcnv/ ) {
-        $c .= " --rawcnv $original_input"; print "$c\n";
+        $c .= " --rawcnv $original_input"; print LOG "$c\n";
     }
 	elsif ( $input =~ /\.vcf$/ || $input =~ /\.vcf\.gz$/ ) {
 		if ( $input =~ /\.vcf\.gz$/ ) {
@@ -809,9 +811,9 @@ sub run_qc {
 			$cat_zcat = "cat";
 		}
 				$sub_out = vcf_check_build($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_extract_del_dup_IDs($input);
-				print $sub_out;
+				print LOG $sub_out;
 				$sub_out = vcf_to_pfile($input);
 				$sub_out = pvar_chr_pos_link;
 				$sub_out = extract_info_vcf;
@@ -833,10 +835,10 @@ sub run_qc {
         $cp = $MyDirectoryPathPrefix."PerlModules/./plink --allow-extra-chr --bfile $bfile --check-sex";$o=`$cp`;
 		$c.=" --callrate plink.imiss --popstrat plink.eigenvec --related plink.genome";
     }
-    print "QC Command=".$c."\n";
+    print LOG "QC Command=".$c."\n";
     $o = `$c`;
-    print "QC Command Output=".$o."\n";
-    print "$o\n";
+    print LOG "QC Command Output=".$o."\n";
+    print LOG "$o\n";
     #print "1\n";
     $c =
 "awk '{print \$1\"\\t\"\$4\"\\t\"\$5}' Cases.rawcnv_remove_QC_RemoveIDs.txt_wMaceQualityScore_remove_QC_RemoveCalls.txt_Indexes | sed 's/^chr//' | sed 's/:/\\t/' | sed 's/-/\\t/' | sed 's/\\tstate.,cn=/\\t/' | sort -k5,5 > temp/$out"
@@ -900,8 +902,10 @@ if ( -e "plink.sexcheck" ) {
 
     }
     if ( $quantitativeTrait ne "" ) {
+	    #plink v1.9 needed for quantitative trait association.
+	    #--pheno input file needs 3 columns: FID IID QuantitativeTrait
         $c =
-            "awk '{print \$1}' $quantitativeTrait > temp/$quantitativeTrait"
+            "awk '{print \$2}' $quantitativeTrait > temp/$quantitativeTrait"
           . "_IDs; awk '{print \$5}' temp/$out"
           . "$inputNoPath.rawcnv2 | sort -u | fgrep -vf - temp/$quantitativeTrait"
           . "_IDs > temp/$out"
@@ -923,21 +927,21 @@ if ( -e "plink.sexcheck" ) {
 	 #. "uniqIDs";
 	  #$o = `$c`;
         $c =
-            "sed 's/\r//' temp/$quantitativeTrait"
+            "sed 's/\\r//' temp/$quantitativeTrait"
           . "_IDs | sort -u | fgrep -vwf temp/$out"
           . "casesNotInCNV.txt > temp/$out"
           . "cases_NoCR_NoDup_Exists";
         $o = `$c`;
         $c =
-            "sort $quantitativeTrait >temp/$out"
+            "awk '{print \$2\"\\t\"\$3}' $quantitativeTrait | sort >temp/$out"
           . "qt.sort; join temp/$out"
           . "cases_NoCR_NoDup_Exists temp/$out"
-          . "qt.sort | awk '{print \"0 \"\$1\" 0 0 0 \"\$2}' > temp/$out"
-          . "fam";
+          . "qt.sort | awk '{print \"0 \"\$2\" 0 0 0 \"\$3}' > temp/$out"
+          . "fam";#3 col not 2 col
         $o       = `$c`;
         $c       = "wc -l temp/$out" . "uniqIDs | awk '{ORS=\"\";print \$1}'";
         $samples = `$c`;
-        $c       = "awk '{ORS=\"\";if(NR==1)print NF-1}' $quantitativeTrait";
+        $c       = "awk '{ORS=\"\";if(NR==1)print NF-2}' $quantitativeTrait";#3 col not 2 col
         $traits  = `$c`;
         $c       = "wc -l temp/$out" . "fam | awk '{ORS=\"\";print \$1}'";
         $samplesWTrait = `$c`;
@@ -954,7 +958,7 @@ if ( -e "plink.sexcheck" ) {
               . "uniq_ids $bfile"
               . ".fam -1 1 -2 2 -o2.1,2.2,2.3,2.4,2.5,2.6 | sort -k2,2 > temp/$out"
               . "fam";
-            $o  = `$c`;print "join=".$c."\n";
+            $o  = `$c`;print LOG "join=".$c."\n";
             $c  = "wc -l < temp/$out" . "uniq_ids";
             $o1 = `$c`;
             chomp($o1);
@@ -1011,10 +1015,10 @@ $c =
 $o = `$c`;
 $c = "head -1 temp/$out" . "del.bim";
 $o = `$c`;
-print $o. "\n";
+print LOG $o. "\n";
 $c = "head -1 temp/$out" . "del.fam";
 $o = `$c`;
-print $o. "\n";
+print LOG $o. "\n";
 
 =pod
 $c = "mv temp/$out" . "del.bim temp/$out" . "del.bim.bak";
@@ -1044,10 +1048,10 @@ $o = `$c`;
 #$c="mv temp/$out"."del.bim temp/$out"."del.bim.bak2";$o=`$c`;
 $c = "head -1 temp/$out" . "del.bim";
 $o = `$c`;
-print "Step1\n" . $o . "\n";
+print LOG "Step1\n" . $o . "\n";
 $c = "head -1 temp/$out" . "del.fam";
 $o = `$c`;
-print $o. "\n";
+print LOG $o. "\n";
 if   ( $input =~ /\.vcf\.gz$/ ) { $c = "zcat $input | "; }
 else                            { $c = "cat $input | "; }
 $c .= "grep ^#CHROM | head -1 | cut -f 10- | sed 's/\\t/\\n/g' > temp/$out"
@@ -1233,7 +1237,7 @@ $o = `$c`;
 if ( $cases ne "" ) {
 
     if ( $statistic eq "" || $statistic eq "fisher") {
-	print "stat=" . $statistic . "\n";
+	print LOG "stat=" . $statistic . "\n";
         #Get matching p-values to original ParseCNV with OR from assoc fisher
         $c =
             $MyDirectoryPathPrefix
@@ -1323,7 +1327,7 @@ if ( $cases ne "" ) {
 #"Rare Recurrent" filter with --mac 2 --max-maf 0.01
 
             if ( $covar ne "" ) {
-                $glm_covar = "--glm --covar $covar";
+                $glm_covar = "--glm hide-covar --covar $covar --covar-variance-standardize";
             }
             else {
                 $glm_covar = "--glm allow-no-covars";
@@ -1387,10 +1391,10 @@ if ( $cases ne "" ) {
             "cat $cases temp/$out"
           . "AllVcfIDs.txt | sort | uniq -c | awk 'BEGIN{print\"fid iid fatid matid sex y1\"}{count=\$1;ID=\$2;print \"0\",ID,\"0\\t0\\t0\\t\"count}' > temp/$out"
           . "del.fam.rvtest.pheno";
-        print "Running:" . $c . "\n";
+        print LOG "Running:" . $c . "\n";
         $o = `$c`;
-        print "Output:" . $o . "\n";
-        print "stat=" . $statistic . "\n";
+        print LOG "Output:" . $o . "\n";
+        print LOG "stat=" . $statistic . "\n";
 
         %SingleVariant_RvTests = (
             "score"           => 1,
@@ -1465,13 +1469,13 @@ if ( $cases ne "" ) {
 		$c =
                 $MyDirectoryPathPrefix
               . "PerlModules/executable/./vcf2kinship --inVcf $my_input --bn --out temp/$out". "_vcf2kinship";
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
 	}
-	print "statistic $statistic\n";
+	print LOG "statistic $statistic\n";
 	if ( $SingleVariant_RvTests{$statistic} == 1 ) {
-        print "In SingleVariant\n";
+        print LOG "In SingleVariant\n";
 		
 	     $c =
                 $MyDirectoryPathPrefix
@@ -1481,9 +1485,9 @@ if ( $cases ne "" ) {
               . $statistic
               . "_output1 --single $statistic";
             if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-	    print "Running:" . $c . "\n";
+	    print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
             $c =
                 $MyDirectoryPathPrefix
               . "PerlModules/executable/./rvtest --inVcf temp/$out"
@@ -1494,9 +1498,9 @@ if ( $cases ne "" ) {
               . $statistic
               . "_output1.del --single $statistic";
 	      if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
             $c =
                 $MyDirectoryPathPrefix
               . "PerlModules/executable/./rvtest --inVcf temp/$out"
@@ -1507,9 +1511,9 @@ if ( $cases ne "" ) {
               . $statistic
               . "_output1.dup --single $statistic";
 	      if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
         }
         else {
 #rvtest --inVcf input.vcf --pheno phenotype.ped --out output --geneFile refFlat_hg19.txt.gz --burden cmc --vt price --kernel skat,kbac
@@ -1533,7 +1537,7 @@ if ( $cases ne "" ) {
                 }
             }
             else {
-                print "No Matching RvTest Found for $statistic\n";
+                print LOG "No Matching RvTest Found for $statistic\n";
             }
 
 #Meta-Analysis: rvtest --inVcf input.vcf --pheno phenotype.ped --covar example.covar --covar-name age,bmi --inverseNormal --useResidualAsPhenotype  --meta score,cov --out output
@@ -1551,9 +1555,9 @@ if ( $cases ne "" ) {
               . $build
               . "_refFlat.txt.gz $RvTestsStatFlag $statistic";
 	      if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
 
             $c =
                 $MyDirectoryPathPrefix
@@ -1568,9 +1572,9 @@ if ( $cases ne "" ) {
               . $build
               . "_refFlat.txt.gz $RvTestsStatFlag $statistic";
 	      if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
             $c =
                 $MyDirectoryPathPrefix
               . "PerlModules/executable/./rvtest --inVcf temp/$out"
@@ -1584,9 +1588,9 @@ if ( $cases ne "" ) {
               . $build
               . "_refFlat.txt.gz $RvTestsStatFlag $statistic";
 	      if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-            print "Running:" . $c . "\n";
+            print LOG "Running:" . $c . "\n";
             $o = `$c`;
-            print "Output:" . $o . "\n";
+            print LOG "Output:" . $o . "\n";
 
             if ( $MetaAnalysis_RvTests{$statistic} == 1 ) {
                 $c =
@@ -1597,9 +1601,9 @@ if ( $cases ne "" ) {
                   . $statistic
                   . "_output1 $RvTestsStatFlag $statistic";
 		  if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-                print "Running:" . $c . "\n";
+                print LOG "Running:" . $c . "\n";
                 $o = `$c`;
-                print "Output:" . $o . "\n";
+                print LOG "Output:" . $o . "\n";
                 $c =
                     $MyDirectoryPathPrefix
                   . "PerlModules/executable/./rvtest --inVcf temp/$out"
@@ -1610,9 +1614,9 @@ if ( $cases ne "" ) {
                   . $statistic
                   . "_output1.del $RvTestsStatFlag $statistic";
 		  if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-                print "Running:" . $c . "\n";
+                print LOG "Running:" . $c . "\n";
                 $o = `$c`;
-                print "Output:" . $o . "\n";
+                print LOG "Output:" . $o . "\n";
 
                 $c =
                     $MyDirectoryPathPrefix
@@ -1624,9 +1628,9 @@ if ( $cases ne "" ) {
                   . $statistic
                   . "_output1.dup $RvTestsStatFlag $statistic";
 		  if($statistic =~ /fam/){$c.=" --kinship temp/$out". "_vcf2kinship.kinship";}
-                print "Running:" . $c . "\n";
+                print LOG "Running:" . $c . "\n";
                 $o = `$c`;
-                print "Output:" . $o . "\n";
+                print LOG "Output:" . $o . "\n";
             }
 
         }
@@ -1646,7 +1650,7 @@ if ( $cases ne "" ) {
         $myRvTestOutput2File =
           "temp/$out" . "_rvtest_" . $statistic . "_output2";
         $o = `$c $myRvTestOutput1File > $myRvTestOutput2File`;
-        print "COMMAND=" . $c . "\n" . "OUTPUT=" . $o . "\\n";
+        print LOG "COMMAND=" . $c . "\n" . "OUTPUT=" . $o . "\\n";
 
         #del
         $cmd =
@@ -1658,7 +1662,7 @@ if ( $cases ne "" ) {
         $myRvTestOutput2File =
           "temp/$out" . "_rvtest_" . $statistic . "_output2.del";
         $o = `$c $myRvTestOutput1File > $myRvTestOutput2File`;
-        print "COMMAND=" . $c . "\\n" . "OUTPUT=" . $o . "\\n";
+        print LOG "COMMAND=" . $c . "\\n" . "OUTPUT=" . $o . "\\n";
 
         #dup
         $cmd =
@@ -1670,7 +1674,7 @@ if ( $cases ne "" ) {
         $myRvTestOutput2File =
           "temp/$out" . "_rvtest_" . $statistic . "_output2.dup";
         $o = `$c $myRvTestOutput1File > $myRvTestOutput2File`;
-        print "COMMAND=" . $c . "\\n" . "OUTPUT=" . $o . "\\n";
+        print LOG "COMMAND=" . $c . "\\n" . "OUTPUT=" . $o . "\\n";
     }    # end of else for statement: if statistic eq "" else
     }
     #Star since RvTests adds to the end of --out based on the test
@@ -1716,7 +1720,7 @@ if ( $quantitativeTrait ne "" ) {
 
     if ( $statistic eq "linear" ) {
         if ( $covar ne "" ) {
-            $glm_covar = "--glm hide-covar --covar $covar";
+            $glm_covar = "--glm hide-covar --covar $covar --covar-variance-standardize";
         }
         else {
             $glm_covar = "--glm allow-no-covars";
@@ -1779,8 +1783,8 @@ if ( $tdt ) {
     $countSNPs = `$c`;
     chomp($countSNPs);
 #$c="perl OutputUtilities/InsertPlinkPvalues.pl";$o=`$c`;
-print("\nDone Loading Input Files\n");
-print "$countSNPs probes with observed CNV breakpoints\n";
+print(LOG "\nDone Loading Input Files\n");
+print LOG "$countSNPs probes with observed CNV breakpoints\n";
 if ( not $mergePVar ) {
     $mergePVar = 1;
 }
@@ -1829,9 +1833,13 @@ elsif ( $quantitativeTrait ne "" ) {
         open( $DUP, "temp/$out" . "dup.qassoc" );
     }
     else {
-        open( $DEL, "temp/$out" . "del.GLM_wCovar.*.glm.linear" )
+	$c = "ls temp/$out" . "GLM_wCovar.del.PHENO1.glm.linear";
+	$o = `$c`;
+        open( $DEL, $o )
           ;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
-        open( $DUP, "temp/$out" . "dup.GLM_wCovar.*.glm.linear" )
+        $c = "ls temp/$out" . "GLM_wCovar.dup.PHENO1.glm.linear";
+        $o = `$c`;
+	open( $DUP, $o )
           ;    #--> GLM_wCovar.AffectedTrait.glm.logistic.hybrid
     }
 
@@ -1845,7 +1853,7 @@ $line = <$DEL>;
 #print "$line\n";
 @Vals = split( /\s+/, $line );
 $i    = 0;
-print "Statistics Header Values=" . "@Vals\n";
+print LOG "Statistics Header Values=" . "@Vals\n";
 while ( ( uc( $Vals[$i] ) ne 'P' ) && ( uc( $Vals[$i] ) ne 'PVALUE' ) && ( uc( $Vals[$i] ) ne 'P-VALUE' ) && ( uc( $Vals[$i] ) ne 'PVALUETWOSIDE' ) && $i <= $#Vals ) {
     $i++;
 }
@@ -1883,7 +1891,7 @@ if ( uc( $Vals[$i] ) ne 'SNP' && uc( $Vals[$i] ) ne 'ID') {
 	my $fd = fileno ${$DEL};
 	$Stats_Filename = readlink("/proc/$$/fd/$fd");
 	$c="awk '{print \$0\"\\t\"\$($myChrColNum+1)\"_\"\$($myBpColNum+1)}' $Stats_Filename > $Stats_Filename.SNPColAdded";
-    	print "Run $c\n";
+    	print LOG "Run $c\n";
 	$o=`$c`;
 	close($DEL);
 	open($DEL, "$Stats_Filename.SNPColAdded");
@@ -1919,11 +1927,11 @@ if (   uc( $Vals[$i] ) ne 'BETA'
     && uc( $Vals[$i] ) ne 'T'
     && uc( $Vals[$i] ) ne 'OR' )
 {
-    print "No direction of effect field detected. Trying to use other indicators.\n";
+    print LOG "No direction of effect field detected. Trying to use other indicators.\n";
     my $fd = fileno ${$DEL};
         $Stats_Filename = readlink("/proc/$$/fd/$fd");
 	$c="awk '{if(NR==1){for(i=1;i<=NF;i++){if(\$i==\"CaseAF\"){CaseAFColNum=i}if(\$i==\"CtrlAF\"){CtrlAFColNum=i}}if(CaseAFColNum && CtrlAFColNum){print \$0\"\\tCaseAF-CtrlAF\"}else{print \"NoMatch CaseAF CtrlAF\";exit}}else {print \$0\"\\t\"\$CaseAFColNum-\$CtrlAFColNum}}' $Stats_Filename > $Stats_Filename.EFFECTColAdded";
-        print "Run $c\n";
+        print LOG "Run $c\n";
 	$o=`$c`;
         close($DEL);
         open($DEL, "$Stats_Filename.EFFECTColAdded");
@@ -1952,11 +1960,11 @@ if(uc( $Vals[$i] ) eq 'EFFECT')
 	$Vals[$i]='BETA';
 }
 $myCaseEnrichStat = uc( $Vals[$i] );
-print "myCaseEnrichStat=" . $myCaseEnrichStat . "\n";
+print LOG "myCaseEnrichStat=" . $myCaseEnrichStat . "\n";
 
 
-print "myPColNum mySNPColNum myBetaTColNum myORColNum myChrColNum myBpColNum\n";
-print $myPColNum. "\t"
+print LOG "myPColNum mySNPColNum myBetaTColNum myORColNum myChrColNum myBpColNum\n";
+print LOG $myPColNum. "\t"
   . $mySNPColNum . "\t"
   . $myBetaTColNum . "\t"
   . $myORColNum . "\t"
@@ -1965,6 +1973,7 @@ print $myPColNum. "\t"
 
 $JustPosIndex_caseEnrichDel    = 0;
 $JustPosIndex_controlEnrichDel = 0;
+$mySnpColNum = $mySNPColNum;
 
 #$c="rm CNVR_caseEnrichDel.txt CNVR_controlEnrichDel.txt CNVR_caseEnrichDup.txt CNVR_controlEnrichDup.txt";$o=`$c`;print"$o\n";
 open( CNVR_caseEnrichDel,    ">temp/$out" . "caseEnrichDel.txt" );
@@ -2434,8 +2443,9 @@ $c =
   . "caseEnrichDel.txt temp/$out"
   . "controlEnrichDel.txt temp/$out"
   . "caseEnrichDup.txt temp/$out"
-  . "controlEnrichDup.txt | sed '/:[\\ ]*\$/d' | sed 's/temp\\///' | sed 's/$out//' | sed 's/D/\td/' | sed 's/:/\t/' | sed 's/.txt//' | sed 's/Enrich//' | sort -k6,6g | awk '!_[\$1\$2\$10]++' | awk '{print \$3,\$4,\$5,\$6,\$7,\$8,\$9,\$1,\$2}' | sed 's/\ /\t/g' > temp/$out"
+  . "controlEnrichDup.txt | sed '/:[\\ ]*\$/d' | sed 's/temp\\///' | sed 's/$out//' | sed 's/D/\\td/' | sed 's/:/\\t/' | sed 's/.txt//' | sed 's/Enrich//' | sort -k6,6g | awk '!_[\$1\$2\$10]++' | awk '{print \$3,\$4,\$5,\$6,\$7,\$8,\$9,\$1,\$2}' | sed 's/\\ /\t/g' > temp/$out"
   . "Report.txt";
+print LOG $c;
 $o = `$c`;
 
 #2       1005300 1005300 0.00025375      -0.437555       2_1005300       0.0370378     control del
@@ -2452,54 +2462,58 @@ open( CHR_POS_or_END_SNP,
         "temp/$out"
       . "$inputNoPath"
       . "_wEND_CHR_POS_or_END_SNPID_wENDCol_wSitePostCol.txt" );
-%CHR_POS_to_VarID_vcf;
-%PlinkCHR_POS_to_REF;
-%PlinkCHR_POS_to_ALT;
-
+%CHR_POS_END_TYPE_to_VarID_vcf;
+%PlinkCHR_POS_END_TYPE_to_REF;
+%PlinkCHR_POS_END_TYPE_to_ALT;
+#Note variable $PlinkCHR_POS_to_VarID_pvar
 #123 5 ChrPosEnd Ref
 while (<CHR_POS_or_END_SNP>) {
     chomp;
     @a                                = split( /\t/, $_ );
     $myCHR_POS                        = $a[0] . "_" . $a[1];
-    $myCHR_POS_END                    = $a[0] . "_" . $a[1] . "_" . $a[2];;
-    $CHR_POS_to_VarID_vcf{$myCHR_POS_END} = $a[3];
-    $PlinkCHR_POS_to_REF{$myCHR_POS_END}  = $a[4];
-    $PlinkCHR_POS_to_ALT{$myCHR_POS_END}  = $a[5];
+    $myCHR_POS_END_TYPE                    = $a[3]; #$a[0] . ":" . $a[1] . "-" . $a[2] . "-" . $a[5];
+	#print "$myCHR_POS_END_TYPE\n";
+	#$myCHR_POS_END
+    #was underscore delimiter rather than : and -
+    $CHR_POS_END_TYPE_to_VarID_vcf{$myCHR_POS_END_TYPE } = $a[3];
+    $PlinkCHR_POS_END_TYPE_to_REF{$myCHR_POS_END_TYPE }  = $a[4];
+    $PlinkCHR_POS_END_TYPE_to_ALT{$myCHR_POS_END_TYPE }  = $a[5];
 }
 close(CHR_POS_or_END_SNP);
-print "test_CHR_POS_to_VarID_pvar="
+print LOG "test_CHR_POS_to_VarID_pvar="
   . "$test_CHR_POS_to_VarID_pvar\t$VCF_VarID\n";
 $VCF_VarID = $CHR_POS_to_VarID_vcf{$test_CHR_POS_to_VarID_pvar};
-print "test_CHR_POS_or_END_SNP=" . "$test_CHR_POS_to_VarID_pvar\t$VCF_VarID\n";
+print LOG "test_CHR_POS_or_END_SNP=" . "$test_CHR_POS_to_VarID_pvar\t$VCF_VarID\n";
 
 while ( $line = <REPORT> ) {
     chomp($line);
     @a = split( /\t/, $line );
-    print "Here is array a contents initially @a\n";
+    print LOG "Here is array a contents initially @a\n";
 
     #print "$a[5]\n";
     #Could switch out bed for pgen but plink2 may not have recode
     #Update plink2 has --export ped
     #temp/$out"."$inputNoPath
-    $CHR_POS_ID = $a[5]; # . "_" . $a[2];
-    "$CHR_POS_ID";    # stringified
+    $CHR_POS_END_TYPE_ID = $a[5]; # . "_" . $a[2];
+    #"$CHR_POS_END_TYPE_ID";    # stringified
                       #$VCF_VarID=$PlinkCHR_POS_to_VarID_pvar{$CHR_POS_ID};
-    $CHR_POS_ID =~ s/:|-/_/g;
-    $VCF_VarID = $CHR_POS_to_VarID_vcf{$CHR_POS_ID};
+    #$CHR_POS_ID =~ s/:|-/_/g;
+	#print "$CHR_POS_END_TYPE_ID\n";
+    $VCF_VarID = $CHR_POS_END_TYPE_to_VarID_vcf{$CHR_POS_END_TYPE_ID}; #was $PlinkCHR_POS_END_TYPE_to_VarID_pvar
 
 #if($VCF_VarID) may need to add back in case of any variant exclusion
 #Trying to reformulate the multiallelic to allow ped conversion when getting contributing samples and calls
 #Error: .pgen file contains multiallelic variants, while .pvar does not.
 #$c="awk -F\"\\t\" 'BEGIN{OFS=\"\\t\"}{gsub(/,.*/,\"\",\$5);print \$0}' temp/$out"."$inputNoPath".".pvar > temp/$out"."$inputNoPath".".pvar2; cp temp/$out"."$inputNoPath".".pvar temp/$out"."$inputNoPath".".pvar.bak; mv temp/$out"."$inputNoPath".".pvar2 temp/$out"."$inputNoPath".".pvar";$o=`$c`;
-    print "CHR_POS_ID=" . $CHR_POS_ID . " VCF_VarID=" . $VCF_VarID . "\n";
+    print LOG "CHR_POS_ID=" . $CHR_POS_END_TYPE_ID . " VCF_VarID=" . $VCF_VarID . "\n";
     $myChrPos = $a[5]; #$a[0] . "_" . $a[1];
-    $myChrPos =~ s/:|-/_/g;
-    if ( $PlinkCHR_POS_to_ALT{$myChrPos} =~ /,/ ) {
+    #$myChrPos =~ s/:|-/_/g;
+    if ( $PlinkCHR_POS_END_TYPE_to_ALT{$myChrPos} =~ /,/ ) {
 	    #temp/1KG_SudmantEtAl_wRvTestsVcfHeader_and_multiallelic 
 	    #$c=$cat_zcat . " " . $input . " | grep ^#CHROM > temp/$out" . "VcfHeader_and_multiallelic;" . $cat_zcat . " " . $input . " | grep -P \"$a[0]\\t$a[1]\\t\" >> temp/$out" . "VcfHeader_and_multiallelic";
 	    #$c="awk '{for(i=10;i<=NF;i++){if(NR==1){IDs[i]=\$i}else{gsub(/:.*/,\"\",\$i);if(\$i!=\"0/0\"&&\$i!=\"0|0\"){print IDs[i]}}}}' temp/$out" . "VcfHeader_and_multiallelic | sort > temp/$out" . "_multiallelic_NonRefRef";$o=`$c`;
-	    $c=$cat_zcat . " " . $input . " | grep ^\#CHROM > temp/$out" . "VcfHeader_and_multiallelic;" . $cat_zcat . " " . $input . " | grep -P \"$a[0]\\t$a[1]\\t\" >> temp/$out" . "VcfHeader_and_multiallelic";print "$c\n";$o=`$c`;print "$o\n";
-            $c="awk '{for(i=10;i<=NF;i++){if(NR==1){IDs[i]=\$i}else{gsub(/:.*/,\"\",\$i);if(\$i!=\"0\/0\"&&\$i!=\"0\|0\"){print IDs[i]}}}}' temp/$out" . "VcfHeader_and_multiallelic > temp/$out" . "_multiallelic_NonRefRef";print "$c\n";$o=`$c`;print "$o\n";
+	    $c=$cat_zcat . " " . $input . " | grep ^\#CHROM > temp/$out" . "VcfHeader_and_multiallelic;" . $cat_zcat . " " . $input . " | grep -P \"$a[0]\\t$a[1]\\t\" >> temp/$out" . "VcfHeader_and_multiallelic";print LOG "$c\n";$o=`$c`;print LOG "$o\n";
+            $c="awk '{for(i=10;i<=NF;i++){if(NR==1){IDs[i]=\$i}else{gsub(/:.*/,\"\",\$i);if(\$i!=\"0\/0\"&&\$i!=\"0\|0\"){print IDs[i]}}}}' temp/$out" . "VcfHeader_and_multiallelic > temp/$out" . "_multiallelic_NonRefRef";print LOG "$c\n";$o=`$c`;print LOG "$o\n";
 
 	    #$PlinkCHR_POS_to_ALTtwo{$ChrPos} = $vals[4];
 	    $c="awk '{if(NR>1){print \$2\"\\t\"\$3}}' temp/$out"."file.pheno | sort > temp/$out"."file.pheno2col";$o=`$c`;
@@ -2523,11 +2537,11 @@ while ( $line = <REPORT> ) {
     $o = `$c`;
 
 #$c="echo $a[5] > temp/$out"."TagSnp; $MyDirectoryPathPrefix"."PerlModules/./plink2 --bfile temp/$out$a[8] --extract temp/$out"."TagSnp --export ped --allow-no-sex --out temp/$out"."TagSnp";$o=`$c`;#print "$c\n$o\n";
-    $myChrPos = $a[5]; #$a[0] . "_" . $a[1];
-    $myChrPos_ = $a[5];
-    $myChrPos =~ s/:|-/_/g;
-    $myREF    = $PlinkCHR_POS_to_REF{$myChrPos};
-    print "\$myREF= " . $myREF . "\n";
+    $myChrPos_END_TYPE = $a[5]; #$a[0] . "_" . $a[1];
+    $myChrPos__END_TYPE = $a[5];
+    #$myChrPos =~ s/:|-/_/g;
+    $myREF    = $PlinkCHR_POS_END_TYPE_to_REF{$myChrPos_END_TYPE};
+    print LOG "\$myREF= " . $myREF . "\n";
     $c = "grep -vP \"$myREF\\t$myREF\$\" temp/$out"
       . "TagSnp.ped | awk 'BEGIN{cases=0}{if(\$6==2)cases++}END{ORS=\"\";print cases}'";
     $Cases = `$c`;
@@ -2543,12 +2557,12 @@ while ( $line = <REPORT> ) {
    }
     if ( $Cases == 0 )    { $CasesSIDs   = "NA"; }
     if ( $Controls == 0 ) { $ControlSIDs = "NA"; }
-    @chr_pos_end = split( /_/, $myChrPos );
-    print "Here is array a contents before print @a\n";
+    @chr_pos_end = split( /:|-/, $myChrPos_END_TYPE );
+    print LOG "Here is array a contents before print @a\n";
     #Here is array a contents initially 17 9724255 9724255 0.03418 0.1348 17:9724255-9725522 0.03418 control del
     #Here is array a contents before print 17 9724255 9724255 0.03418 0.1348 17:9724255-9725522 0.03418 control del
-    @chr_pos_end = split( /_/, $CHR_POS_ID );
-    print "Here is array chr_pos_end contents before print @chr_pos_end\n";
+    #@chr_pos_end = split( /:|-/, $CHR_POS_ID );
+    print LOG "Here is array chr_pos_end contents before print @chr_pos_end\n";
     if($a[4]=="NA"){$a[4]="infinity"};
     if($a[4]=="0"){$a[4]="-infinity"};
 	print REPORT2 "$chr_pos_end[0]\t$chr_pos_end[1]\t$chr_pos_end[2]\t$a[3]\t$a[4]\t$a[5]\t$a[6]\t$a[7]\t$a[8]\t$Cases\t$Controls\t$CaseSIDs\t$ControlSIDs\n";
@@ -2729,7 +2743,7 @@ open( REPORT2,      ">temp/$out" . "Report6.txt" );
 open( SNP_IDS,      ">temp/$out" . "Snp_IDs.txt" );
 open( REPORT_BRIEF, ">$out" . "Report.txt" );
 printf REPORT_BRIEF (
-    "%3s %11s %10s %10s %6s %8s %8s %6s %5s %5s\n", "chr",
+    "%4s %11s %10s %10s %6s %8s %8s %6s %5s %5s\n", "#chr",
     "start($build)",                                "stop",
     "p",                                            $myCaseEnrichStat,
     "cases",                                        "controls",
@@ -2842,15 +2856,19 @@ $c =
   . "$inputNoPath.rawcnv2Sorted";
 $o = `$c`;
 $c =
-"awk '{print \$10\"\\t\"\$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9}' $out"
-  . "Report.txt | sed 's/_/\\t/' | awk '{print \$1\"\\t\"\$2\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10\"\\t\"\$11}' | sort -k1,1 -k2,2n | grep -v tag > $out"
+"awk '{print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5\"\\t\"\$6\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10}' $out"
+  . "Report.txt | sort -k1,1 -k2,2n | grep -v tag > $out"
   . "Report.txtSorted";
+  #print "Running ".$c;
+$o = `$c`;
+
+$c = "echo -e '#CHR\\tSTART\\tSTOP\\tCopyNumber\\tSAMPLE\\tCONFIDENCE/QualityScore\\t#chr\\tstart\\tstop\\tp\\tOR\\tcases\\tcontrols\\tfilter\\ttype\\ttag\\toverlap(CNVCall+CNVR)' > $out"."Report_ContributingCalls.txt";
 $o = `$c`;
 $c =
     $MyDirectoryPathPrefix
   . "PerlModules/bedtools intersect -a temp/$out"
   . "$inputNoPath.rawcnv2Sorted -b $out"
-  . "Report.txtSorted -sorted -wo | awk '{if((\$4<2&&\$(NF-1)==\"del\")||(\$4>=2&&\$(NF-1)==\"dup\"))print}' > $out"
+  . "Report.txtSorted -sorted -wo | awk '{if((\$4<2&&\$(NF-2)==\"del\")||(\$4>=2&&\$(NF-2)==\"dup\"))print}' >> $out"
   . "Report_ContributingCalls.txt";
 $o = `$c`;
 if ( $countLines > 0 ) {
@@ -2871,7 +2889,7 @@ close(SNP_IDS);
 
 if ( $batch ne "" ) {
     $c =
-      "perl OutputUtilities/PercentSamples.pl $batch temp/$out" . "Snp_IDs.txt";
+      "perl " . $MyDirectoryPathPrefix . "OutputUtilities/PercentSamples.pl $batch temp/$out" . "Snp_IDs.txt";
     $o = `$c`;
     $c = "cat "
       . $MyDirectoryPathPrefix
