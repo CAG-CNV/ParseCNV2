@@ -1236,7 +1236,8 @@ $o = `$c`;
 #CALCULATE Variant ID based rare recurrent CNV association statistics
 if ( $cases ne "" ) {
 
-    if ( $statistic eq "" || $statistic eq "fisher") {
+if ( $statistic eq "" ) { $statistic = "fisher"; }
+    if ( $statistic eq "fisher") {
 	print LOG "stat=" . $statistic . "\n";
         #Get matching p-values to original ParseCNV with OR from assoc fisher
         $c =
