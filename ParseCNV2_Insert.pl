@@ -11,6 +11,7 @@ print "\nUSAGE MESSAGE:\n
 perl ParseCNV2_Insert.pl -i CNV_Calls.rawcnv -c Cases.txt -b hg19 -o myParseCNV2OutputPrefix\n";
 exit;
 }
+use Getopt::Long qw(GetOptions);
 GetOptions('i=s'=>\$input,'o=s'=>\$out,'b=s'=>\$build,'p=f'=>\$mergePVar,'d=i'=>\$mergeDist,'t'=>\$tdt,'m=f'=>\$maxPInclusion,'bfile=s'=>\$bfile,'qc'=>\$qc,'log=s'=>\$log,'c=s'=>\$cases,'q=s'=>\$quantitativeTrait,'batch=s'=>\$batch);
 $c="sort -k1,1 -k2,2n temp/$out$input.rawcnv2 | sed 's/\\t\$//' > temp/$out$input.rawcnv2Sorted";$o=`$c`;
 
